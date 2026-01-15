@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{% block content %}
+  <div class="d-flex justify-content-between align-items-center">
+    <h3>Financeiro</h3>
+    <a class="btn btn-primary" href="/financeiro/novo/">Novo lançamento</a>
+  </div>
+
+  <form class="row g-2 mt-2" method="get">
+    <div class="col-md-3">
+      <label class="form-label">Início</label>
+      <input class="form-control" type="date" name="inicio" value="{{ inicio }}">
+    </div>
+    <div class="col-md-3">
+      <label class="form-label">Fim</label>
+      <input class="form-control" type="date" name="fim" value="{{ fim }}">
+    </div>
+    <div class="col-md-2 d-flex align-items-end">
+      <button class="btn btn-outline-secondary w-100">Filtrar</button>
+    </div>
+  </form>
+
+  <div class="row g-3 mt-2">
+    <div class="col-md-3"><div class="card"><div class="card-body">
+      <div class="text-muted">Entradas</div><div class="fs-5">R$ {{ entradas|floatformat:2 }}</div>
+    </div></div></div>
+    <div class="col-md-3"><div class="card"><div class="card-body">
+      <div class="text-muted">Saídas</div><div class="fs-5">R$ {{ saidas|floatformat:2 }}</div>
+    </div></div></div>
+    <div class="col-md-3"><div class="card"><div class="card-body">
+      <div class="text-muted">Custo produtos</div><div class="fs-5">R$ {{ custo|floatformat:2 }}</div>
+    </div></div></div>
+    <div class="col-md-3"><div class="card"><div class="card-body">
+      <div class="text-muted">Lucro real</div><div class="fs-5"><span class="badge bg-success">R$ {{ lucro_real|floatformat:2 }}</span></div>
+    </div></div></div>
+  </div>
+
+  <div class="table-responsive mt-3">
+    <table class="table table-sm table-striped">
+      <thead><tr><th>Data</th><th>Tipo</th><th>Origem</th><th>Categoria</th><th>Descrição</th><th class="text-end">Valor</th></tr></thead>
+      <tbody>
+        {% for l in lancamentos %}
+          <tr>
+            <td>{{ l.data|date:"d/m/Y" }}</td>
+            <td>{{ l.get_tipo_display }}</td>
+            <td>{{ l.get_origem_display }}</td>
+            <td>{{ l.categoria }}</td>
+            <td>{{ l.descricao }}</td>
+            <td class="text-end">R$ {{ l.valor|floatformat:2 }}</td>
+          </tr>
+        {% empty %}
+          <tr><td colspan="6" class="text-muted">Nenhum lançamento.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+{% endblock %}

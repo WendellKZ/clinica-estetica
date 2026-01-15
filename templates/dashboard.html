@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% block title %}Dashboard | Elisângela Barbosa Estética{% endblock %}
+{% block content %}
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <div>
+      <h2 class="mb-0">Dashboard</h2>
+      <div class="text-muted">Visão rápida do dia e do mês (lucro real)</div>
+    </div>
+    <div class="d-flex gap-2">
+      <a class="btn btn-outline-secondary" href="/agenda/"><i class="bi bi-calendar2-week me-1"></i>Ir para Agenda</a>
+      <a class="btn btn-outline-secondary" href="/financeiro/"><i class="bi bi-cash-coin me-1"></i>Ir para Financeiro</a>
+    </div>
+  </div>
+
+  <div class="alert alert-info">
+    <i class="bi bi-info-circle me-1"></i>
+    Este dashboard é exclusivo do Admin. (Nos próximos patches, vamos plugar os números reais aqui.)
+  </div>
+
+  <div class="row g-3">
+    <div class="col-12 col-lg-6">
+      <div class="card shadow-sm">
+        <div class="card-header bg-white"><strong>Hoje</strong></div>
+        <div class="card-body">
+          <div class="text-muted mb-2">Atalhos rápidos:</div>
+          <div class="d-flex flex-wrap gap-2">
+            <a class="btn btn-primary" href="/agenda/novo/"><i class="bi bi-plus-circle me-1"></i>Novo agendamento</a>
+            <a class="btn btn-outline-primary" href="/loja/vendas/nova/"><i class="bi bi-bag-plus me-1"></i>Nova venda</a>
+            <a class="btn btn-outline-secondary" href="/financeiro/novo/"><i class="bi bi-plus-square me-1"></i>Novo lançamento</a>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-12 col-lg-6">
+      <div class="card shadow-sm">
+        <div class="card-header bg-white"><strong>Mês (até hoje)</strong></div>
+        <div class="card-body">
+          <div class="text-muted">Vamos conectar aqui o resumo mensal com lucro real no patch do Financeiro.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+{% endblock %}

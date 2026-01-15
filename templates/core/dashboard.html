@@ -1,0 +1,141 @@
+{% extends "base.html" %}
+{% block content %}
+  <div class="row g-3">
+    <div class="col-12">
+      <h3>Dashboard</h3>
+      <p class="text-muted mb-0">Lucro real = Entradas − Saídas − Custo dos produtos vendidos</p>
+    </div>
+
+    <div class="col-md-6">
+      <div class="card">
+        <div class="card-header">Hoje</div>
+        <div class="card-body">
+          <div class="row">
+            <div class="col-6">Entradas</div><div class="col-6 text-end"><strong>R$ {{ entradas_dia|floatformat:2 }}</strong></div>
+            <div class="col-6">Saídas</div><div class="col-6 text-end"><strong>R$ {{ saidas_dia|floatformat:2 }}</strong></div>
+            <div class="col-6">Custo produtos</div><div class="col-6 text-end"><strong>R$ {{ custo_dia|floatformat:2 }}</strong></div>
+            <div class="col-6 mt-2">Lucro real</div><div class="col-6 text-end"><span class="badge bg-success fs-6">R$ {{ lucro_dia|floatformat:2 }}</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-6">
+      <div class="card">
+        <div class="card-header">Mês (até hoje)</div>
+        <div class="card-body">
+          <div class="row">
+            <div class="col-6">Entradas</div><div class="col-6 text-end"><strong>R$ {{ entradas_mes|floatformat:2 }}</strong></div>
+            <div class="col-6">Saídas</div><div class="col-6 text-end"><strong>R$ {{ saidas_mes|floatformat:2 }}</strong></div>
+            <div class="col-6">Custo produtos</div><div class="col-6 text-end"><strong>R$ {{ custo_mes|floatformat:2 }}</strong></div>
+            <div class="col-6 mt-2">Lucro real</div><div class="col-6 text-end"><span class="badge bg-success fs-6">R$ {{ lucro_mes|floatformat:2 }}</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Gráficos -->
+    <div class="col-md-6">
+      <div class="card">
+        <div class="card-header">Lucro real (últimos 14 dias)</div>
+        <div class="card-body">
+          <canvas id="chartDaily" height="120"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-6">
+      <div class="card">
+        <div class="card-header">Lucro real (últimos 12 meses)</div>
+        <div class="card-body">
+          <canvas id="chartMonthly" height="120"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-12 mt-2">
+      <div class="d-flex justify-content-between align-items-center">
+        <h5 class="mb-0">Agendamentos de hoje</h5>
+        <a class="btn btn-sm btn-primary" href="/agenda/novo/">Novo agendamento</a>
+      </div>
+      <div class="table-responsive mt-2">
+        <table class="table table-sm table-striped">
+          <thead>
+            <tr>
+              <th>Hora</th><th>Cliente</th><th>Serviço</th><th>Profissional</th><th>Status</th><th></th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for a in proximos %}
+              <tr>
+                <td>{{ a.inicio|date:"H:i" }}</td>
+                <td>{{ a.cliente.nome }}</td>
+                <td>{{ a.servico.nome }}</td>
+                <td>{{ a.profissional.username }}</td>
+                <td>{{ a.get_status_display }}</td>
+                <td><a class="btn btn-sm btn-outline-secondary" href="/agenda/{{ a.id }}/">Abrir</a></td>
+              </tr>
+            {% empty %}
+              <tr><td colspan="6" class="text-muted">Nenhum agendamento para hoje.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function drawBarChart(canvasId, labels, values) {
+      const canvas = document.getElementById(canvasId);
+      if (!canvas) return;
+      const ctx = canvas.getContext("2d");
+      const w = canvas.width = canvas.parentElement.clientWidth - 10;
+      const h = canvas.height;
+
+      const padding = 28;
+      const maxAbs = Math.max(1, ...values.map(v => Math.abs(v)));
+      const barW = (w - padding*2) / values.length;
+
+      ctx.clearRect(0, 0, w, h);
+      // eixo zero
+      const zeroY = padding + (h - padding*2)/2;
+      ctx.beginPath();
+      ctx.moveTo(padding, zeroY);
+      ctx.lineTo(w - padding, zeroY);
+      ctx.strokeStyle = "#999";
+      ctx.stroke();
+
+      values.forEach((v, i) => {
+        const x = padding + i*barW + barW*0.15;
+        const bw = barW*0.7;
+        const scaled = (v / maxAbs) * ((h - padding*2)/2);
+        const y = v >= 0 ? zeroY - scaled : zeroY;
+        const bh = Math.abs(scaled);
+
+        ctx.fillStyle = v >= 0 ? "#198754" : "#dc3545";
+        ctx.fillRect(x, y, bw, bh);
+
+        // rótulos simplificados (1 em cada 2)
+        if (labels.length <= 14 && (i % 2 === 0)) {
+          ctx.fillStyle = "#666";
+          ctx.font = "10px Arial";
+          ctx.fillText(labels[i], x, h - 10);
+        }
+      });
+    }
+
+    const dailyLabels = {{ chart_daily_labels|safe }};
+    const dailyValues = {{ chart_daily_values|safe }};
+    const monthlyLabels = {{ chart_monthly_labels|safe }};
+    const monthlyValues = {{ chart_monthly_values|safe }};
+
+    // Garantir formato JS (Django injeta listas python -> ok pelo safe)
+    drawBarChart("chartDaily", dailyLabels, dailyValues);
+    drawBarChart("chartMonthly", monthlyLabels, monthlyValues);
+
+    window.addEventListener("resize", () => {
+      drawBarChart("chartDaily", dailyLabels, dailyValues);
+      drawBarChart("chartMonthly", monthlyLabels, monthlyValues);
+    });
+  </script>
+{% endblock %}

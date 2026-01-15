@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% block content %}
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <div>
+      <h3 class="mb-0">Agendamento #{{ a.id }}</h3>
+      <div class="text-muted">{{ a.inicio|date:"d/m/Y H:i" }}</div>
+    </div>
+    <a class="btn btn-outline-secondary" href="/agenda/"><i class="bi bi-arrow-left me-1"></i>Voltar</a>
+  </div>
+
+  <div class="card">
+    <div class="card-body">
+      <div class="row g-3">
+        <div class="col-md-6">
+          <div><strong>Cliente:</strong> {{ a.cliente.nome }}</div>
+          <div><strong>Serviço:</strong> {{ a.servico.nome }}</div>
+        </div>
+        <div class="col-md-6">
+          <div><strong>Profissional:</strong> {{ a.profissional.username }}</div>
+          <div><strong>Status:</strong> {{ a.get_status_display }}</div>
+        </div>
+      </div>
+
+      <hr>
+
+      <div class="d-flex flex-wrap gap-2">
+        {% if a.status != 'REALIZADO' and a.status != 'CANCELADO' %}
+          <form method="post" action="/agenda/{{ a.id }}/status/CONFIRMADO/">
+            {% csrf_token %}
+            <button class="btn btn-outline-primary"><i class="bi bi-patch-check me-1"></i>Confirmar</button>
+          </form>
+          <form method="post" action="/agenda/{{ a.id }}/status/REALIZADO/">
+            {% csrf_token %}
+            <button class="btn btn-success"><i class="bi bi-check2-circle me-1"></i>Marcar como realizado</button>
+          </form>
+          <form method="post" action="/agenda/{{ a.id }}/status/CANCELADO/">
+            {% csrf_token %}
+            <button class="btn btn-outline-danger"><i class="bi bi-x-circle me-1"></i>Cancelar</button>
+          </form>
+        {% endif %}
+
+        {% if a.status == 'REALIZADO' %}
+          <a class="btn btn-primary" href="/agenda/{{ a.id }}/gerar-venda/"><i class="bi bi-bag-plus me-1"></i>Gerar venda</a>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+{% endblock %}

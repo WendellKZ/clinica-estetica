@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+{% block content %}
+  {% if messages %}{% for m in messages %}<div class="alert alert-{{ m.tags }}">{{ m }}</div>{% endfor %}{% endif %}
+
+  <div class="d-flex flex-wrap gap-2 justify-content-between align-items-center mb-3">
+    <div>
+      <h3 class="mb-0">Agenda do dia</h3>
+      <div class="text-muted">{{ dia|date:"d/m/Y (D)" }}</div>
+    </div>
+    <div class="d-flex flex-wrap gap-2 align-items-center">
+      <a class="btn btn-outline-secondary" href="/agenda/?{% if prof_id %}prof={{ prof_id }}&{% endif %}"><i class="bi bi-calendar-week me-1"></i>Semana</a>
+      <a class="btn btn-primary" href="/agenda/novo/"><i class="bi bi-plus-circle me-1"></i>Novo agendamento</a>
+    </div>
+  </div>
+
+  <div class="card mb-3">
+    <div class="card-body d-flex flex-wrap gap-2 align-items-center">
+      <form method="get" class="d-flex flex-wrap gap-2 align-items-center">
+        <input class="form-control" type="date" name="dia" value="{{ dia|date:'Y-m-d' }}">
+        <select class="form-select" name="prof" style="max-width:260px;">
+          <option value="">Todos os profissionais</option>
+          {% for p in profissionais %}
+            <option value="{{ p.id }}" {% if prof_id == p.id|stringformat:"s" %}selected{% endif %}>{{ p.username }}</option>
+          {% endfor %}
+        </select>
+        <button class="btn btn-outline-primary">Ver</button>
+        <a class="btn btn-outline-secondary" href="/agenda/dia/">Hoje</a>
+      </form>
+    </div>
+  </div>
+
+  {% if agendamentos %}
+    <div class="card">
+      <div class="table-responsive">
+        <table class="table align-middle mb-0">
+          <thead>
+            <tr>
+              <th>Hora</th>
+              <th>Cliente</th>
+              <th class="hide-xs">Serviço</th>
+              <th class="hide-xs">Profissional</th>
+              <th>Status</th>
+              <th>Ações</th>
+            </tr>
+          </thead>
+          <tbody>
+          {% for a in agendamentos %}
+            <tr style="border-left: 6px solid {{ a.prof_color }};">
+              <td><strong>{{ a.inicio|date:"H:i" }}</strong></td>
+              <td>{{ a.cliente.nome }}</td>
+              <td class="hide-xs">{{ a.servico.nome }}</td>
+              <td class="hide-xs">{{ a.profissional.username }}</td>
+              <td>
+                {% if a.status == 'CANCELADO' %}<span class="badge bg-danger">Cancelado</span>
+                {% elif a.status == 'REALIZADO' %}<span class="badge bg-success">Realizado</span>
+                {% elif a.status == 'CONFIRMADO' %}<span class="badge" style="background: linear-gradient(90deg,#6b2b7a,#b14bbf);">Confirmado</span>
+                {% else %}<span class="badge" style="background: linear-gradient(90deg,#f4a3b8,#ff7aa2);">Agendado</span>{% endif %}
+              </td>
+              <td class="d-flex flex-wrap gap-2">
+                {% if a.status == 'AGENDADO' %}
+                  <form method="post" action="/agenda/{{ a.id }}/status/CONFIRMADO/">{% csrf_token %}
+                    <button class="btn btn-sm btn-outline-primary">Confirmar</button>
+                  </form>
+                {% endif %}
+                {% if a.status != 'REALIZADO' and a.status != 'CANCELADO' %}
+                  <form method="post" action="/agenda/{{ a.id }}/status/REALIZADO/">{% csrf_token %}
+                    <button class="btn btn-sm btn-success">Realizado (gera venda)</button>
+                  </form>
+                  <form method="post" action="/agenda/{{ a.id }}/status/CANCELADO/">{% csrf_token %}
+                    <button class="btn btn-sm btn-outline-danger">Cancelar</button>
+                  </form>
+                {% endif %}
+              </td>
+            </tr>
+          {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  {% else %}
+    <div class="card"><div class="card-body text-muted">Nenhum agendamento para este dia.</div></div>
+  {% endif %}
+{% endblock %}

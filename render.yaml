@@ -1,0 +1,8 @@
+services:
+  - type: web
+    name: estetica-clinica
+    env: python
+    plan: free
+    buildCommand: pip install -r requirements.txt && python manage.py collectstatic --noinput && python manage.py migrate
+    startCommand: gunicorn estetica.wsgi:application --bind 0.0.0.0:$PORT
+    autoDeploy: true

@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+{% block title %}Agenda | Elisângela Barbosa Estética{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-start mb-3 stack-mobile">
+  <div>
+    <h2 class="mb-0">Agenda</h2>
+    {% if semana_inicio and semana_fim %}
+      <div class="text-muted">Visão semanal ({{ semana_inicio|date:"d/m" }} a {{ semana_fim|date:"d/m" }})</div>
+    {% else %}
+      <div class="text-muted">Visão semanal</div>
+    {% endif %}
+  </div>
+
+  <div class="d-flex gap-2 flex-wrap">
+    <a class="btn btn-primary w-100-mobile" href="{% url 'agenda_novo' %}">
+      <i class="bi bi-plus-circle me-1"></i>Novo agendamento
+    </a>
+  </div>
+</div>
+
+{% if not agendamentos %}
+  <div class="card shadow-sm">
+    <div class="card-body">Nenhum agendamento nesta semana.</div>
+  </div>
+{% else %}
+  <div class="agenda-wrap">
+    <div class="agenda-grid">
+      {# Espera que o backend envie `dias` (cada item com `data` e `itens`). #}
+      {% for dia in dias %}
+        <div class="agenda-day">
+          <h6 class="mb-2">{{ dia.data|date:"D d/m" }}</h6>
+
+          {% if dia.itens %}
+            {% for a in dia.itens %}
+              <div class="agenda-card" style="border-left: 6px solid {{ a.prof_color|default:'#7e57c2' }};">
+                <div class="d-flex justify-content-between align-items-start">
+                  <div class="agenda-time">{{ a.inicio|date:"H:i" }}</div>
+                  <div class="agenda-badges">
+                    {% if a.status == 'CANCELADO' %}
+                      <span class="badge bg-danger">Cancelado</span>
+                    {% elif a.status == 'REALIZADO' %}
+                      <span class="badge bg-success">Realizado</span>
+                    {% else %}
+                      <span class="badge text-bg-warning">Marcado</span>
+                    {% endif %}
+                  </div>
+                </div>
+
+                <div class="agenda-meta mt-1">
+                  <div><strong>Cliente:</strong> {% if a.cliente %}{{ a.cliente.nome }}{% else %}-{% endif %}</div>
+                  <div><strong>Serviço:</strong> {{ a.servico.nome }}</div>
+                  <div><strong>Profissional:</strong> {{ a.profissional.nome }}</div>
+                </div>
+              </div>
+            {% endfor %}
+          {% else %}
+            <div class="text-muted small">Sem horários.</div>
+          {% endif %}
+        </div>
+      {% endfor %}
+    </div>
+  </div>
+{% endif %}
+{% endblock %}

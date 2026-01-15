@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block content %}
+  <h3>Nova venda (loja)</h3>
+  <p class="text-muted mb-0">Você pode selecionar um cliente existente ou cadastrar na hora.</p>
+  <form method="post" class="mt-3">
+    {% csrf_token %}
+    <div class="row g-3">
+      <div class="col-md-6"><label class="form-label">Cliente existente (opcional)</label>{{ form.cliente }}</div>
+      <div class="col-md-3"><label class="form-label">Forma pagamento</label>{{ form.forma_pagamento }}</div>
+      <div class="col-md-3"><label class="form-label">Observação</label>{{ form.observacao }}</div>
+
+      <div class="col-12"><hr></div>
+
+      <div class="col-md-6"><label class="form-label">Novo cliente (nome)</label>{{ form.cliente_nome }}</div>
+      <div class="col-md-3"><label class="form-label">Telefone</label>{{ form.cliente_telefone }}</div>
+      <div class="col-md-3"><label class="form-label">Email</label>{{ form.cliente_email }}</div>
+    </div>
+    <div class="mt-3">
+      <button class="btn btn-primary">Criar venda</button>
+      <a class="btn btn-outline-secondary" href="/">Voltar</a>
+    </div>
+  </form>
+  <script>document.querySelectorAll("input, textarea, select").forEach(el => el.classList.add("form-control"));</script>
+{% endblock %}

@@ -1,0 +1,117 @@
+{% extends "base.html" %}
+{% block content %}
+  {% if messages %}
+    {% for m in messages %}
+      <div class="alert alert-{{ m.tags }}">{{ m }}</div>
+    {% endfor %}
+  {% endif %}
+
+  <div class="d-flex justify-content-between align-items-center">
+    <h3>Venda #{{ venda.id }}</h3>
+    <form method="post" action="/loja/vendas/{{ venda.id }}/finalizar/">
+      {% csrf_token %}
+      <button class="btn btn-success">Finalizar (gera entrada)</button>
+    </form>
+  </div>
+
+  <div class="row g-3 mt-1">
+    <div class="col-md-4">
+      <div class="card">
+        <div class="card-body">
+          <div><strong>Total:</strong> R$ {{ venda.total|floatformat:2 }}</div>
+          <div><strong>Custo:</strong> R$ {{ venda.custo_total|floatformat:2 }}</div>
+          <div><strong>Lucro bruto da venda:</strong> R$ {{ lucro_bruto|floatformat:2 }}</div>
+          <div class="text-muted small mt-2">Forma: {{ venda.get_forma_pagamento_display }}</div>
+          <div class="text-muted small">Cliente: {% if venda.cliente %}{{ venda.cliente.nome }}{% else %}-{% endif %}</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-8">
+      <div class="card">
+        <div class="card-header">Adicionar item</div>
+        <div class="card-body">
+
+          {% if add_form.non_field_errors %}
+            <div class="alert alert-danger">{{ add_form.non_field_errors }}</div>
+          {% endif %}
+
+          <p class="text-muted mb-2">
+            Você pode escolher um produto cadastrado <strong>ou</strong> cadastrar na hora (nome + preço + custo).
+          </p>
+
+          <form method="post">
+            {% csrf_token %}
+            <input type="hidden" name="add_item" value="1">
+
+            <div class="row g-2 align-items-end">
+              <div class="col-md-6">
+                <label class="form-label">Produto cadastrado (opcional)</label>
+                {{ add_form.produto }}
+              </div>
+
+              <div class="col-md-2">
+                <label class="form-label">Qtd</label>
+                {{ add_form.quantidade }}
+              </div>
+
+              <div class="col-md-4"></div>
+
+              <div class="col-md-6">
+                <label class="form-label">Produto (nome)</label>
+                {{ add_form.item_nome }}
+              </div>
+
+              <div class="col-md-3">
+                <label class="form-label">Preço (R$)</label>
+                {{ add_form.preco_unitario }}
+              </div>
+
+              <div class="col-md-3">
+                <label class="form-label">Custo (R$)</label>
+                {{ add_form.custo_unitario }}
+              </div>
+
+              <div class="col-md-3 ms-auto">
+                <button class="btn btn-primary w-100">Adicionar</button>
+              </div>
+            </div>
+          </form>
+
+          <script>
+            document.querySelectorAll("input, textarea, select").forEach(el => el.classList.add("form-control"));
+          </script>
+        </div>
+      </div>
+
+      <div class="table-responsive mt-3">
+        <table class="table table-sm table-striped align-middle">
+          <thead>
+            <tr>
+              <th>Produto</th><th>Qtd</th><th>Preço</th><th>Subtotal</th><th>Custo</th><th></th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for it in venda.itens.all %}
+              <tr>
+                <td>{% if it.produto %}{{ it.produto.nome }}{% else %}{{ it.nome_produto }}{% endif %}</td>
+                <td>{{ it.quantidade }}</td>
+                <td>R$ {{ it.preco_unitario|floatformat:2 }}</td>
+                <td>R$ {{ it.subtotal|floatformat:2 }}</td>
+                <td>R$ {{ it.custo_total|floatformat:2 }}</td>
+                <td class="text-end">
+                  <form method="post" action="/loja/vendas/itens/{{ it.id }}/remover/" onsubmit="return confirm('Remover este item?');">
+                    {% csrf_token %}
+                    <button class="btn btn-sm btn-outline-danger">Excluir</button>
+                  </form>
+                </td>
+              </tr>
+            {% empty %}
+              <tr><td colspan="6" class="text-muted">Sem itens ainda.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+{% endblock %}

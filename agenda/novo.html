@@ -1,0 +1,167 @@
+{% extends "base.html" %}
+{% block content %}
+  {% if messages %}
+    {% for m in messages %}
+      <div class="alert alert-{{ m.tags }}">{{ m }}</div>
+    {% endfor %}
+  {% endif %}
+
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <div>
+      <h3 class="mb-0">Novo agendamento</h3>
+      <div class="text-muted">Cadastre rápido — cliente pode ser criado na hora.</div>
+    </div>
+    <a class="btn btn-outline-secondary" href="/agenda/"><i class="bi bi-arrow-left me-1"></i>Voltar</a>
+  </div>
+
+  <div class="card">
+    <div class="card-body">
+      {% if form.non_field_errors %}
+        <div class="alert alert-danger">{{ form.non_field_errors }}</div>
+      {% endif %}
+
+      <form method="post" class="row g-3" id="formAgendamento">
+        {% csrf_token %}
+
+        <div class="col-md-6">
+          <label class="form-label">Buscar cliente (filtra a lista)</label>
+          <input class="form-control" id="clienteBusca" placeholder="Digite para filtrar clientes...">
+          <div class="form-text">Opcional. Use para achar rápido um cliente na lista.</div>
+        </div>
+
+        <div class="col-md-6">
+          <label class="form-label">Cliente (selecionar)</label>
+          {{ form.cliente }}
+          <div class="form-text">Ou preencha abaixo para cadastrar na hora.</div>
+        </div>
+
+        <div class="col-md-6">
+          <label class="form-label">Serviço</label>
+          {{ form.servico }}
+        </div>
+
+        {% if not is_profissional %}
+          <div class="col-md-6">
+            <label class="form-label">Profissional</label>
+            {{ form.profissional }}
+          </div>
+        {% endif %}
+
+        <div class="col-md-4">
+          <label class="form-label">Início</label>
+          {{ form.inicio }}
+        </div>
+
+        <div class="col-md-2">
+          <label class="form-label">Duração</label>
+          {{ form.duracao_min }}
+        </div>
+
+        <div class="col-md-4">
+          <label class="form-label">Fim (auto)</label>
+          {{ form.fim }}
+          <div class="form-text">Calculado automaticamente pela duração (você pode ajustar se quiser).</div>
+        </div>
+
+        <div class="col-md-2">
+          <label class="form-label">Status</label>
+          {{ form.status }}
+        </div>
+
+        <div class="col-md-6">
+          <label class="form-label">Cliente (nome)</label>
+          {{ form.cliente_nome }}
+        </div>
+
+        <div class="col-md-3">
+          <label class="form-label">Telefone</label>
+          {{ form.cliente_telefone }}
+        </div>
+
+        <div class="col-md-3">
+          <label class="form-label">E-mail</label>
+          {{ form.cliente_email }}
+        </div>
+
+        <div class="col-12">
+          <label class="form-label">Observações</label>
+          {{ form.observacoes }}
+        </div>
+
+        <div class="col-12 d-flex flex-wrap gap-2">
+          <button class="btn btn-primary" name="action" value="salvar">
+            <i class="bi bi-check2-circle me-1"></i>Agendar
+          </button>
+
+          <button class="btn btn-outline-primary" name="action" value="confirmar">
+            <i class="bi bi-patch-check me-1"></i>Agendar e já confirmar
+          </button>
+
+          <a class="btn btn-outline-secondary" href="/agenda/">Cancelar</a>
+        </div>
+      </form>
+
+      <script>
+        document.querySelectorAll("select, input, textarea").forEach(el => {
+          if (el.tagName === "SELECT") el.classList.add("form-select");
+          else el.classList.add("form-control");
+        });
+
+        const busca = document.getElementById("clienteBusca");
+        const sel = document.getElementById("id_cliente");
+        let original = [];
+        if (sel){
+          original = Array.from(sel.options).map(o => ({value:o.value, text:o.text, selected:o.selected}));
+        }
+        function applyFilter(){
+          if(!sel) return;
+          const q = (busca.value || "").toLowerCase().trim();
+          sel.innerHTML = "";
+          original.forEach(o => {
+            if (!q || o.text.toLowerCase().includes(q)){
+              const opt = document.createElement("option");
+              opt.value = o.value;
+              opt.textContent = o.text;
+              opt.selected = o.selected;
+              sel.appendChild(opt);
+            }
+          });
+        }
+        if (busca && sel){
+          busca.addEventListener("input", applyFilter);
+        }
+
+        function parseLocal(dt){
+          if(!dt) return null;
+          const d = new Date(dt);
+          return isNaN(d.getTime()) ? null : d;
+        }
+        function pad(n){ return String(n).padStart(2,"0"); }
+        function toInputValue(d){
+          const yyyy = d.getFullYear();
+          const mm = pad(d.getMonth()+1);
+          const dd = pad(d.getDate());
+          const hh = pad(d.getHours());
+          const mi = pad(d.getMinutes());
+          return `${yyyy}-${mm}-${dd}T${hh}:${mi}`;
+        }
+
+        const inpInicio = document.getElementById("id_inicio");
+        const inpFim = document.getElementById("id_fim");
+        const selDur = document.getElementById("id_duracao_min");
+
+        function recalcFim(){
+          if(!inpInicio || !inpFim || !selDur) return;
+          const start = parseLocal(inpInicio.value);
+          const mins = parseInt(selDur.value || "0", 10);
+          if(!start || !mins) return;
+          const end = new Date(start.getTime() + mins*60000);
+          inpFim.value = toInputValue(end);
+        }
+
+        if (inpInicio) inpInicio.addEventListener("change", recalcFim);
+        if (selDur) selDur.addEventListener("change", recalcFim);
+      </script>
+    </div>
+  </div>
+{% endblock %}
