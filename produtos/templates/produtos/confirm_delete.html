@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block title %}Excluir produto | Sistema Clínica{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <div>
+      <h1 class="h3 mb-1">Excluir produto</h1>
+      <div class="text-muted">Confirme para remover este produto.</div>
+    </div>
+    <a class="btn btn-outline-secondary" href="{% url 'produtos_lista' %}">Voltar</a>
+  </div>
+
+  <div class="card shadow-sm border-0">
+    <div class="card-body">
+      <div class="alert alert-warning">
+        Tem certeza que deseja excluir <strong>{{ produto.nome }}</strong>?
+      </div>
+
+      <form method="post">
+        {% csrf_token %}
+        <button class="btn btn-danger" type="submit">Sim, excluir</button>
+        <a class="btn btn-link" href="{% url 'produtos_lista' %}">Cancelar</a>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,70 @@
+
+/* =========================================================
+   AGENDA SEMANAL – rolagem por dia (muitos agendamentos)
+   Melhora UX: header do dia fixo + scrollbar discreta + fade
+   ========================================================= */
+
+/* cada coluna vira um “card” com cabeçalho fixo e lista rolável */
+.day-col{
+  display:flex;
+  flex-direction:column;
+}
+
+/* Cabeçalho do dia fica visível enquanto rola */
+.day-head{
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: rgba(255,255,255,.78);
+  border-bottom: 1px solid rgba(30,20,60,.08);
+  padding-bottom: 10px;
+  margin-bottom: 10px;
+  backdrop-filter: blur(6px);
+}
+
+/* Lista de agendamentos rola dentro do card do dia */
+.day-body{
+  max-height: 56vh;          /* ajuste fino (um pouco menor pra não “estourar”) */
+  overflow: auto;
+  padding-right: 6px;
+  scroll-behavior: smooth;
+}
+
+/* Scrollbar mais “fina” e elegante */
+.day-body{
+  scrollbar-width: thin;  /* Firefox */
+  scrollbar-color: rgba(120,60,200,.28) transparent;
+}
+.day-body::-webkit-scrollbar{ width: 8px; }
+.day-body::-webkit-scrollbar-track{ background: transparent; }
+.day-body::-webkit-scrollbar-thumb{
+  background: rgba(120,60,200,.22);
+  border-radius: 999px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+.day-body::-webkit-scrollbar-thumb:hover{
+  background: rgba(120,60,200,.32);
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+
+/* Indicador visual (fade) no final da lista pra “sugerir” rolagem */
+.day-col{
+  position: relative;
+}
+.day-col::after{
+  content:"";
+  position:absolute;
+  left: 12px;
+  right: 12px;
+  bottom: 12px;
+  height: 38px;
+  pointer-events:none;
+  background: linear-gradient(to bottom, rgba(246,243,255,0), rgba(246,243,255,0.95));
+  border-radius: 18px;
+}
+
+/* Quando o usuário está no topo, mantém o fade.
+   Obs: sem JS não dá pra remover dinamicamente ao chegar no final,
+   mas já ajuda a sinalizar que existe scroll. */

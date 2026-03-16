@@ -4,6 +4,7 @@ from django.core.validators import MinValueValidator
 from decimal import Decimal
 
 class Servico(models.Model):
+    empresa = models.ForeignKey("empresas.Empresa", null=True, blank=True, on_delete=models.PROTECT, related_name="servicos")
     nome = models.CharField(max_length=150)
     preco = models.DecimalField(max_digits=10, decimal_places=2, validators=[MinValueValidator(Decimal("0"))])
     duracao_minutos = models.IntegerField(default=60)
@@ -16,17 +17,19 @@ class Agendamento(models.Model):
         ("MARCADO", "Marcado"),
         ("CONFIRMADO", "Confirmado"),
         ("REALIZADO", "Realizado"),
+        ("FINALIZADO", "Finalizado"),
         ("CANCELADO", "Cancelado"),
         ("FALTOU", "Faltou"),
     ]
-    cliente = models.ForeignKey("clientes.Cliente", on_delete=models.CASCADE)
+    empresa = models.ForeignKey("empresas.Empresa", null=True, blank=True, on_delete=models.PROTECT, related_name="agendamentos")
+
+    cliente = models.ForeignKey("clientes.Cliente", on_delete=models.PROTECT)
     profissional = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT)
     servico = models.ForeignKey(Servico, on_delete=models.PROTECT)
     inicio = models.DateTimeField()
     fim = models.DateTimeField()
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="MARCADO")
     observacoes = models.TextField(blank=True)
-
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
@@ -53,3 +56,25 @@ class AtendimentoProduto(models.Model):
 
     def __str__(self):
         return f"{self.produto.nome} x{self.quantidade}"
+
+from django.db.models.signals import post_save, post_delete
+from django.dispatch import receiver
+
+from django.db import transaction
+
+@receiver(post_save, sender=AtendimentoProduto)
+def deduzir_estoque_atendimento(sender, instance, created, **kwargs):
+    if created and instance.produto:
+        with transaction.atomic():
+            produto = instance.produto
+            if produto.estoque_atual < instance.quantidade:
+                raise ValueError(f"Estoque insuficiente de {produto.nome} para este agendamento. Restam: {produto.estoque_atual}")
+            produto.estoque_atual -= instance.quantidade
+            produto.save(update_fields=['estoque_atual'])
+
+@receiver(post_delete, sender=AtendimentoProduto)
+def devolver_estoque_atendimento(sender, instance, **kwargs):
+    if instance.produto:
+        produto = instance.produto
+        produto.estoque_atual += instance.quantidade
+        produto.save(update_fields=['estoque_atual'])

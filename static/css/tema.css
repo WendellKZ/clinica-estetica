@@ -1,0 +1,10 @@
+.navbar-glass{
+  background: linear-gradient(90deg, rgba(8,22,38,.96), rgba(16,32,60,.92));
+  border-bottom: 1px solid rgba(255,255,255,.08);
+}
+.bg-soft{
+  background: radial-gradient(circle at 15% 10%, rgba(216,180,254,.18), transparent 35%),
+              radial-gradient(circle at 90% 0%, rgba(251,207,232,.22), transparent 35%),
+              #ffffff;
+  min-height: 100vh;
+}

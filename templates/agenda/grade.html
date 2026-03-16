@@ -1,0 +1,63 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Agenda - Grade</title>
+  <link rel="stylesheet" href="{% static 'css/agenda_grade.css' %}">
+</head>
+<body>
+  <div class="grade-topbar">
+    <div class="left">
+      <h1>Agenda</h1>
+      <div class="subtitle">Visão por profissional</div>
+    </div>
+
+    <form class="right" method="get">
+      <button class="btn" type="button" onclick="navDay(-1)">‹</button>
+      <button class="btn" type="button" onclick="goToday()">Hoje</button>
+      <input class="date" type="date" name="data" value="{{ dia|date:'Y-m-d' }}" onchange="this.form.submit()">
+      <button class="btn" type="button" onclick="navDay(1)">›</button>
+      <a class="btn primary" href="/agenda/">Voltar</a>
+    </form>
+  </div>
+
+  <div class="grade-wrap">
+    <div class="time-col" id="timeCol"></div>
+
+    <div class="pro-cols" id="proCols">
+      {% for p in profissionais %}
+        <div class="pro-col" data-pro-id="{{ p.id }}">
+          <div class="pro-head">
+            <div class="avatar" aria-hidden="true">{{ p.nome|default:"?"|slice:":1" }}</div>
+            <div class="pro-name">{{ p.nome|default:"Profissional" }}</div>
+          </div>
+
+          <div class="pro-body" data-pro-id="{{ p.id }}">
+            {% for a in agendamentos %}
+              {% if a.profissional_id == p.id %}
+                <div class="event"
+                     data-start="{{ a.inicio|date:'H:i' }}"
+                     data-end="{{ a.fim|date:'H:i' }}"
+                     data-status="{{ a.status|default:'Marcado'|lower }}">
+                  <div class="event-time">{{ a.inicio|date:'H:i' }}–{{ a.fim|date:'H:i' }}</div>
+                  <div class="event-title">{{ a.cliente.nome|default:"Cliente" }}</div>
+                  <div class="event-sub">{{ a.servico.nome|default:"Serviço" }}</div>
+                </div>
+              {% endif %}
+            {% endfor %}
+          </div>
+        </div>
+      {% empty %}
+        <div class="empty">
+          <h2>Nenhum agendamento para {{ dia|date:"d/m/Y" }}</h2>
+          <p>Dica: crie um agendamento e volte aqui.</p>
+        </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <script src="{% static 'js/agenda_grade.js' %}"></script>
+</body>
+</html>

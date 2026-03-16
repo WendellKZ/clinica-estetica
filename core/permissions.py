@@ -14,6 +14,6 @@ def can_backoffice(user):
     """Clientes/Financeiro/Loja."""
     return is_admin(user) or user_in_groups(user, ["Recepcao"])
 
-def deny(request, msg="Acesso restrito.", redirect_name="agenda_lista"):
+def deny(request, msg="Acesso restrito.", "agenda:agenda_lista"):
     messages.error(request, msg)
     return redirect(redirect_name)

@@ -8,8 +8,8 @@
 
   <div class="d-flex justify-content-between align-items-center mb-3">
     <div>
-      <h3 class="mb-0">Novo agendamento</h3>
-      <div class="text-muted">Cadastre rápido — cliente pode ser criado na hora.</div>
+      <h3 class="mb-0">{% if modo == 'editar' %}Editar agendamento{% else %}Novo agendamento{% endif %}</h3>
+      <div class="text-muted">{% if modo == 'editar' %}Atualize os dados e salve.{% else %}Agendamento rápido — preencha o essencial e salve.{% endif %}</div>
     </div>
     <a class="btn btn-outline-secondary" href="/agenda/"><i class="bi bi-arrow-left me-1"></i>Voltar</a>
   </div>
@@ -32,7 +32,14 @@
         <div class="col-md-6">
           <label class="form-label">Cliente (selecionar)</label>
           {{ form.cliente }}
-          <div class="form-text">Ou preencha abaixo para cadastrar na hora.</div>
+          <div class="d-flex gap-2 flex-wrap mt-2">
+            <button id="toggleClienteBtn" class="btn btn-sm btn-outline-primary" type="button" data-bs-toggle="collapse" data-bs-target="#novoClienteWrap" aria-expanded="false" aria-controls="novoClienteWrap">
+              Cadastrar cliente na hora
+            </button>
+            <button id="toggleObsBtn" class="btn btn-sm btn-outline-secondary" type="button" data-bs-toggle="collapse" data-bs-target="#obsWrap" aria-expanded="false" aria-controls="obsWrap">
+              + Observações
+            </button>
+          </div>
         </div>
 
         <div class="col-md-6">
@@ -69,33 +76,41 @@
           {{ form.status }}
         </div>
 
-        <div class="col-md-6">
-          <label class="form-label">Cliente (nome)</label>
-          {{ form.cliente_nome }}
+        <div class="col-12 collapse" id="novoClienteWrap">
+          <div class="row g-3">
+            <div class="col-md-6">
+            <label class="form-label">Cliente (nome)</label>
+            {{ form.cliente_nome }}
+            </div>
+
+            <div class="col-md-3">
+            <label class="form-label">Telefone</label>
+            {{ form.cliente_telefone }}
+            </div>
+
+            <div class="col-md-3">
+            <label class="form-label">E-mail</label>
+            {{ form.cliente_email }}
+            </div>
+          </div>
         </div>
 
-        <div class="col-md-3">
-          <label class="form-label">Telefone</label>
-          {{ form.cliente_telefone }}
-        </div>
-
-        <div class="col-md-3">
-          <label class="form-label">E-mail</label>
-          {{ form.cliente_email }}
-        </div>
-
-        <div class="col-12">
-          <label class="form-label">Observações</label>
-          {{ form.observacoes }}
+        <div class="col-12 collapse" id="obsWrap">
+          <div class="row g-3">
+            <div class="col-12">
+            <label class="form-label">Observações</label>
+            {{ form.observacoes }}
+            </div>
+          </div>
         </div>
 
         <div class="col-12 d-flex flex-wrap gap-2">
           <button class="btn btn-primary" name="action" value="salvar">
-            <i class="bi bi-check2-circle me-1"></i>Agendar
+            <i class="bi bi-check2-circle me-1"></i>{% if modo == 'editar' %}Salvar alterações{% else %}Agendar{% endif %}
           </button>
 
           <button class="btn btn-outline-primary" name="action" value="confirmar">
-            <i class="bi bi-patch-check me-1"></i>Agendar e já confirmar
+            <i class="bi bi-patch-check me-1"></i>{% if modo == 'editar' %}Salvar e confirmar{% else %}Agendar e já confirmar{% endif %}
           </button>
 
           <a class="btn btn-outline-secondary" href="/agenda/">Cancelar</a>
@@ -155,6 +170,90 @@
         const inpInicio = document.getElementById("id_inicio");
         const inpFim = document.getElementById("id_fim");
 
+        // Pré-preenche "Início" com a data/hora atual (se vazio)
+        if(inpInicio && !inpInicio.value){
+          const now = new Date();
+          const stepMin = 5; // arredonda para o próximo múltiplo de 5 min
+          const rounded = new Date(now.getTime());
+          const m = rounded.getMinutes();
+          const add = (stepMin - (m % stepMin)) % stepMin;
+          rounded.setMinutes(m + add);
+          rounded.setSeconds(0);
+          rounded.setMilliseconds(0);
+          inpInicio.value = toInputValue(rounded);
+        }
+
+        // Modo rápido: esconde campos opcionais e abre automaticamente quando houver preenchimento
+        function hasValue(id){
+          const el = document.getElementById(id);
+          return el && String(el.value || "").trim().length > 0;
+        }
+
+        const wrapCliente = document.getElementById("novoClienteWrap");
+        const wrapObs = document.getElementById("obsWrap");
+        const btnCliente = document.getElementById("toggleClienteBtn");
+        const btnObs = document.getElementById("toggleObsBtn");
+
+        function setToggleText(btn, isOpen, onText, offText){
+          if(!btn) return;
+          btn.textContent = isOpen ? onText : offText;
+        }
+
+        // Abre automaticamente se o usuário já começou a preencher
+        const shouldOpenCliente = hasValue("id_cliente_nome") || hasValue("id_cliente_telefone") || hasValue("id_cliente_email");
+        const shouldOpenObs = hasValue("id_observacoes");
+        if(wrapCliente && shouldOpenCliente) wrapCliente.classList.add("show");
+        if(wrapObs && shouldOpenObs) wrapObs.classList.add("show");
+        setToggleText(btnCliente, wrapCliente?.classList.contains("show"), "Ocultar cadastro do cliente", "Cadastrar cliente na hora");
+        setToggleText(btnObs, wrapObs?.classList.contains("show"), "Ocultar observações", "Adicionar observações");
+
+        // Atualiza texto dos botões ao abrir/fechar (Bootstrap)
+        if(wrapCliente){
+          wrapCliente.addEventListener("shown.bs.collapse", ()=>setToggleText(btnCliente, true, "Ocultar cadastro do cliente", "Cadastrar cliente na hora"));
+          wrapCliente.addEventListener("hidden.bs.collapse", ()=>setToggleText(btnCliente, false, "Ocultar cadastro do cliente", "Cadastrar cliente na hora"));
+        }
+        if(wrapObs){
+          wrapObs.addEventListener("shown.bs.collapse", ()=>setToggleText(btnObs, true, "Ocultar observações", "Adicionar observações"));
+          wrapObs.addEventListener("hidden.bs.collapse", ()=>setToggleText(btnObs, false, "Ocultar observações", "Adicionar observações"));
+        }
+        const wrapCliente = document.getElementById("novoClienteWrap");
+        const wrapObs = document.getElementById("obsWrap");
+        const btnCliente = document.getElementById("btnToggleNovoCliente");
+        const btnObs = document.getElementById("btnToggleObs");
+
+        function setBtnState(btn, open, tOpen, tClosed){
+          if(!btn) return;
+          btn.textContent = open ? tOpen : tClosed;
+        }
+
+        const shouldOpenCliente = hasValue("id_cliente_nome") || hasValue("id_cliente_telefone") || hasValue("id_cliente_email");
+        const shouldOpenObs = hasValue("id_observacoes");
+
+        if(shouldOpenCliente && wrapCliente){
+          wrapCliente.classList.add("show");
+        }
+        if(shouldOpenObs && wrapObs){
+          wrapObs.classList.add("show");
+        }
+
+        setBtnState(btnCliente, !!(wrapCliente && wrapCliente.classList.contains("show")), "Ocultar cadastro do cliente", "Cadastrar cliente na hora");
+        setBtnState(btnObs, !!(wrapObs && wrapObs.classList.contains("show")), "Ocultar observação", "Adicionar observação");
+
+        if(btnCliente && wrapCliente){
+          btnCliente.addEventListener("click", function(){
+            window.setTimeout(function(){
+              setBtnState(btnCliente, wrapCliente.classList.contains("show"), "Ocultar cadastro do cliente", "Cadastrar cliente na hora");
+            }, 50);
+          });
+        }
+        if(btnObs && wrapObs){
+          btnObs.addEventListener("click", function(){
+            window.setTimeout(function(){
+              setBtnState(btnObs, wrapObs.classList.contains("show"), "Ocultar observação", "Adicionar observação");
+            }, 50);
+          });
+        }
+
         function recalcFim(){
           if(!inpInicio || !inpFim || !selDur) return;
           const start = parseLocal(inpInicio.value);
@@ -163,6 +262,9 @@
           const end = new Date(start.getTime() + mins*60000);
           inpFim.value = toInputValue(end);
         }
+
+        // Garante o "Fim" preenchido ao abrir (quando o Início já vier preenchido)
+        recalcFim();
 
         function applyDuracaoServico(){
           if(!selServico || !selDur) return;

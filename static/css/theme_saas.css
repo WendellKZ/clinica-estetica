@@ -1,0 +1,143 @@
+:root{
+  /* Paleta roxa (premium) */
+  --saas-bg1: #f6f1ff;      /* lilás bem claro */
+  --saas-bg2: #eef2ff;      /* azul/lilás claro */
+  --saas-surface: #ffffff;
+  --saas-surface-2: #fbf8ff;
+  --saas-border: rgba(109, 40, 217, .14);
+  --saas-border-strong: rgba(109, 40, 217, .28);
+  --saas-primary: #6d28d9;  /* roxo principal */
+  --saas-primary-2: #a855f7;/* roxo secundário */
+  --saas-text: #0b1220;
+  --saas-muted: #64748b;
+}
+
+/* Fundo geral com menos "branco estourado" */
+html, body{
+  height: 100%;
+}
+body{
+  background: radial-gradient(1200px 600px at 20% 0%, rgba(168,85,247,.18), transparent 60%),
+              radial-gradient(900px 450px at 90% 15%, rgba(109,40,217,.14), transparent 55%),
+              linear-gradient(180deg, var(--saas-bg1), var(--saas-bg2));
+  color: var(--saas-text);
+}
+
+.bg-saas{
+  background: radial-gradient(900px 420px at 25% 0%, rgba(168,85,247,.22), transparent 65%),
+              radial-gradient(780px 360px at 85% 5%, rgba(109,40,217,.18), transparent 60%),
+              linear-gradient(180deg, var(--saas-bg1), var(--saas-bg2)) !important;
+}
+
+/* Navbar */
+.navbar{
+  background: linear-gradient(120deg, #0b1220, #0f2546) !important;
+}
+.navbar-brand{
+  font-weight: 800;
+  letter-spacing: .2px;
+}
+.navbar .nav-link{
+  color: rgba(255,255,255,.82) !important;
+  font-weight: 500;
+}
+.navbar .nav-link:hover,
+.navbar .nav-link:focus{
+  color: #ffffff !important;
+}
+
+/* Conteúdo */
+.container{
+  max-width: 1100px;
+}
+
+/* Cards / superfícies */
+.card,
+.saas-card{
+  background: rgba(255,255,255,.92);
+  border: 1px solid var(--saas-border);
+  border-radius: 16px;
+  box-shadow: 0 10px 30px rgba(15, 23, 42, .06);
+  backdrop-filter: blur(6px);
+}
+.card-header{
+  background: transparent;
+  border-bottom: 1px solid rgba(109,40,217,.10);
+  font-weight: 600;
+}
+
+/* Tabelas */
+.table{
+  background: rgba(255,255,255,.92);
+  border-radius: 14px;
+  overflow: hidden;
+}
+.table thead th{
+  background: linear-gradient(180deg, rgba(109,40,217,.10), rgba(109,40,217,.04));
+  color: #111827;
+  border-bottom: 1px solid rgba(109,40,217,.14);
+  font-weight: 700;
+}
+.table tbody tr:hover{
+  background: rgba(109,40,217,.05);
+}
+
+/* Formulários - mais "detalhe" nos campos */
+.form-control,
+.form-select{
+  background: var(--saas-surface-2);
+  border: 1px solid rgba(109,40,217,.18);
+  border-radius: 12px;
+  padding: .62rem .8rem;
+}
+.form-control::placeholder{
+  color: rgba(100,116,139,.85);
+}
+.form-control:focus,
+.form-select:focus{
+  background: #fff;
+  border-color: rgba(109,40,217,.55);
+  box-shadow: 0 0 0 .25rem rgba(109,40,217,.18);
+}
+
+/* Botões (roxo) */
+.btn-primary{
+  background: linear-gradient(135deg, var(--saas-primary), var(--saas-primary-2));
+  border: none;
+  border-radius: 12px;
+  box-shadow: 0 10px 20px rgba(109,40,217,.18);
+}
+.btn-primary:hover{
+  filter: brightness(1.02);
+}
+.btn-outline-secondary{
+  border-radius: 12px;
+  border-color: rgba(109,40,217,.30);
+  color: rgba(109,40,217,.95);
+}
+.btn-outline-secondary:hover{
+  background: rgba(109,40,217,.10);
+  border-color: rgba(109,40,217,.45);
+  color: rgba(109,40,217,1);
+}
+
+/* Badges */
+.badge{
+  border-radius: 999px;
+}
+
+/* Dropdown */
+.dropdown-menu{
+  border-radius: 14px;
+  border: 1px solid rgba(109,40,217,.14);
+  box-shadow: 0 18px 40px rgba(15,23,42,.14);
+}
+
+/* Ajustes Mobile */
+@media (max-width: 768px){
+  .container{ padding-left: 14px; padding-right: 14px; }
+  .card,
+  .saas-card{ border-radius: 14px; }
+  .form-control,
+  .form-select{ border-radius: 12px; }
+}

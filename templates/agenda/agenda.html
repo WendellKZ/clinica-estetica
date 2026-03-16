@@ -1,64 +1,130 @@
 {% extends "base.html" %}
-{% block title %}Agenda | Elisângela Barbosa Estética{% endblock %}
+{% load static %}
+
 {% block content %}
-<div class="d-flex justify-content-between align-items-start mb-3 stack-mobile">
-  <div>
-    <h2 class="mb-0">Agenda</h2>
-    {% if semana_inicio and semana_fim %}
+<div class="container-fluid py-4">
+  <div class="d-flex align-items-start justify-content-between flex-wrap gap-3 mb-3">
+    <div>
+      <h1 class="display-5 mb-1">Agenda</h1>
       <div class="text-muted">Visão semanal ({{ semana_inicio|date:"d/m" }} a {{ semana_fim|date:"d/m" }})</div>
-    {% else %}
-      <div class="text-muted">Visão semanal</div>
-    {% endif %}
+    </div>
+
+    <div class="d-flex gap-2 flex-wrap align-items-center">
+      <a class="btn btn-outline-primary rounded-pill" href="?offset={{ offset|add:"-1" }}">‹ Semana anterior</a>
+      <a class="btn btn-outline-primary rounded-pill" href="?offset=0">Hoje</a>
+      <a class="btn btn-outline-primary rounded-pill" href="?offset={{ offset|add:"1" }}">Próxima semana ›</a>
+      <a class="btn btn-primary rounded-pill" href="{% url 'agenda:agenda_novo' %}">+ Novo agendamento</a>
+    </div>
   </div>
 
-  <div class="d-flex gap-2 flex-wrap">
-    <a class="btn btn-primary w-100-mobile" href="{% url 'agenda_novo' %}">
-      <i class="bi bi-plus-circle me-1"></i>Novo agendamento
-    </a>
-  </div>
-</div>
+  <div class="agenda-grid">
+    {% for d in dias %}
+      <div class="agenda-col">
+        <div class="day-card">
+          <div class="day-head">
+            <div class="day-title">{{ d.grouper|date:"l" }}</div>
+            <div class="day-date">{{ d.grouper|date:"d/m" }}</div>
+          </div>
 
-{% if not agendamentos %}
-  <div class="card shadow-sm">
-    <div class="card-body">Nenhum agendamento nesta semana.</div>
-  </div>
-{% else %}
-  <div class="agenda-wrap">
-    <div class="agenda-grid">
-      {# Espera que o backend envie `dias` (cada item com `data` e `itens`). #}
-      {% for dia in dias %}
-        <div class="agenda-day">
-          <h6 class="mb-2">{{ dia.data|date:"D d/m" }}</h6>
+          {% if d.list %}
+            <div class="day-items">
+              {% for a in d.list %}
+                <div class="appt">
+                  <div class="appt-top">
+                    <div class="appt-time">
+                      {% if a.inicio %}{{ a.inicio|date:"H:i" }}{% endif %}
+                      {% if a.fim %}–{{ a.fim|date:"H:i" }}{% endif %}
+                    </div>
+                    <div class="appt-status">{{ a.status|default:"Marcado" }}</div>
+                  </div>
 
-          {% if dia.itens %}
-            {% for a in dia.itens %}
-              <div class="agenda-card" style="border-left: 6px solid {{ a.prof_color|default:'#7e57c2' }};">
-                <div class="d-flex justify-content-between align-items-start">
-                  <div class="agenda-time">{{ a.inicio|date:"H:i" }}</div>
-                  <div class="agenda-badges">
-                    {% if a.status == 'CANCELADO' %}
-                      <span class="badge bg-danger">Cancelado</span>
-                    {% elif a.status == 'REALIZADO' %}
-                      <span class="badge bg-success">Realizado</span>
-                    {% else %}
-                      <span class="badge text-bg-warning">Marcado</span>
+                  <div class="appt-main">
+                    <div class="appt-client">
+                      {% if a.cliente %}{{ a.cliente.nome|default:a.cliente }}{% else %}(Sem cliente){% endif %}
+                    </div>
+                    <div class="appt-meta">
+                      {% if a.servico %}✂ {{ a.servico.nome|default:a.servico }}{% endif %}
+                      {% if a.profissional %} • 👤 {{ a.profissional.username|default:a.profissional }}{% endif %}
+                    </div>
+                  </div>
+
+                  <div class="appt-actions">
+                    {% if a.pk %}
+                      <a class="btn btn-sm btn-outline-secondary rounded-pill" href="{% url 'agenda:agenda_editar' a.pk %}">Editar</a>
                     {% endif %}
                   </div>
                 </div>
-
-                <div class="agenda-meta mt-1">
-                  <div><strong>Cliente:</strong> {% if a.cliente %}{{ a.cliente.nome }}{% else %}-{% endif %}</div>
-                  <div><strong>Serviço:</strong> {{ a.servico.nome }}</div>
-                  <div><strong>Profissional:</strong> {{ a.profissional.nome }}</div>
-                </div>
-              </div>
-            {% endfor %}
+              {% endfor %}
+            </div>
           {% else %}
-            <div class="text-muted small">Sem horários.</div>
+            <div class="day-empty text-muted">Sem agendamentos</div>
           {% endif %}
+
+          <div class="day-foot">
+            <a class="btn btn-sm btn-outline-primary rounded-pill" href="{% url 'agenda:agenda_novo' %}">+ Criar</a>
+          </div>
         </div>
-      {% endfor %}
-    </div>
+      </div>
+    {% endfor %}
   </div>
-{% endif %}
+</div>
+
+<style>
+  .agenda-grid{
+    display:grid;
+    grid-template-columns: repeat(7, minmax(220px, 1fr));
+    gap: 18px;
+    align-items: start;
+  }
+  @media (max-width: 1600px){ .agenda-grid{ grid-template-columns: repeat(4, minmax(220px, 1fr)); } }
+  @media (max-width: 1100px){ .agenda-grid{ grid-template-columns: repeat(2, minmax(220px, 1fr)); } }
+  @media (max-width: 680px){ .agenda-grid{ grid-template-columns: 1fr; } }
+
+  .day-card{
+    background: rgba(255,255,255,.75);
+    border: 1px solid rgba(120,120,150,.18);
+    border-radius: 18px;
+    box-shadow: 0 14px 35px rgba(25,15,55,.12);
+    overflow:hidden;
+    min-height: 180px;
+  }
+  .day-head{
+    display:flex;
+    justify-content: space-between;
+    align-items: baseline;
+    padding: 14px 14px 10px;
+    border-bottom: 1px solid rgba(120,120,150,.12);
+    background: rgba(255,255,255,.55);
+  }
+  .day-title{ font-weight: 700; text-transform: capitalize; }
+  .day-date{ font-weight: 600; color: rgba(60,60,80,.75); }
+
+  .day-empty{ padding: 14px; font-size: .95rem; }
+
+  .day-items{ padding: 12px; display:flex; flex-direction: column; gap: 10px; }
+  .appt{
+    background: rgba(255,255,255,.85);
+    border: 1px solid rgba(140,140,170,.16);
+    border-radius: 14px;
+    padding: 10px 10px 8px;
+  }
+  .appt-top{ display:flex; justify-content: space-between; align-items:center; gap: 10px; }
+  .appt-time{ font-weight: 700; }
+  .appt-status{
+    font-size: .78rem;
+    padding: 3px 10px;
+    border-radius: 999px;
+    background: rgba(132, 94, 247, .14);
+    border: 1px solid rgba(132, 94, 247, .25);
+  }
+  .appt-client{ font-weight: 700; margin-top: 6px; }
+  .appt-meta{ color: rgba(60,60,80,.75); font-size: .92rem; margin-top: 2px; }
+  .appt-actions{ margin-top: 8px; display:flex; justify-content:flex-end; }
+
+  .day-foot{
+    padding: 12px 14px 14px;
+    border-top: 1px solid rgba(120,120,150,.12);
+    background: rgba(255,255,255,.55);
+  }
+</style>
 {% endblock %}

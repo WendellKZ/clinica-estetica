@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% load static %}
+{% block content %}
+<div class="container mt-4">
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <div>
+      <h2 class="mb-0">Produtos</h2>
+      <div class="text-muted">Cadastro de produtos usados na Venda.</div>
+    </div>
+    <a class="btn btn-primary" href="{% url 'produtos:produto_create' %}">+ Novo produto</a>
+  </div>
+
+  <form class="row g-2 mb-3" method="get">
+    <div class="col-md-6">
+      <input class="form-control" type="text" name="q" placeholder="Buscar por nome ou SKU" value="{{ q }}">
+    </div>
+    <div class="col-md-2">
+      <button class="btn btn-outline-primary w-100" type="submit">Buscar</button>
+    </div>
+  </form>
+
+  <div class="card shadow-sm">
+    <div class="table-responsive">
+      <table class="table table-hover mb-0 align-middle">
+        <thead>
+          <tr>
+            <th>Nome</th>
+            <th>SKU</th>
+            <th>Preço</th>
+            <th>Custo</th>
+            <th>Estoque</th>
+            <th>Ativo</th>
+            <th class="text-end">Ações</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for p in produtos %}
+          <tr>
+            <td><strong>{{ p.nome }}</strong></td>
+            <td>{{ p.sku|default:"-" }}</td>
+            <td>R$ {{ p.preco_venda }}</td>
+            <td>R$ {{ p.custo }}</td>
+            <td>{{ p.estoque_atual }}</td>
+            <td>{% if p.ativo %}Sim{% else %}Não{% endif %}</td>
+            <td class="text-end">
+              <a class="btn btn-sm btn-outline-secondary" href="{% url 'produtos:produto_update' p.id %}">Editar</a>
+              <a class="btn btn-sm btn-outline-danger" href="{% url 'produtos:produto_delete' p.id %}">Excluir</a>
+            </td>
+          </tr>
+          {% empty %}
+          <tr><td colspan="7" class="text-muted">Nenhum produto cadastrado.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}

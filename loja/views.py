@@ -20,7 +20,7 @@ def produto_novo(request):
         form = ProdutoForm(request.POST)
         if form.is_valid():
             form.save()
-            return redirect("produtos_lista")
+            return redirect("loja:produtos_lista")
     else:
         form = ProdutoForm()
     return render(request, "loja/produto_form.html", {"form": form, "titulo": "Novo produto"})
@@ -32,7 +32,7 @@ def produto_editar(request, pk):
         form = ProdutoForm(request.POST, instance=obj)
         if form.is_valid():
             form.save()
-            return redirect("produtos_lista")
+            return redirect("loja:produtos_lista")
     else:
         form = ProdutoForm(instance=obj)
     return render(request, "loja/produto_form.html", {"form": form, "titulo": f"Editar produto: {obj.nome}"})
@@ -68,7 +68,7 @@ def venda_nova(request):
                 total=0,
                 custo_total=0,
             )
-            return redirect("venda_detalhe", pk=venda.pk)
+            return redirect("loja:venda_detalhe", pk=venda.pk)
     else:
         f = VendaForm()
     return render(request, "loja/venda_nova.html", {"form": f})
@@ -109,7 +109,7 @@ def venda_detalhe(request, pk):
 
             _recalcular_totais(venda)
             messages.success(request, "Item adicionado.")
-            return redirect("venda_detalhe", pk=venda.pk)
+            return redirect("loja:venda_detalhe", pk=venda.pk)
 
     return render(request, "loja/venda_detalhe.html", {
         "venda": venda,
@@ -117,32 +117,70 @@ def venda_detalhe(request, pk):
     })
 
 @login_required
-@transaction.atomic
 def venda_finalizar(request, pk):
     venda = get_object_or_404(Venda, pk=pk)
 
     if venda.itens.count() == 0:
         messages.error(request, "Adicione ao menos 1 item antes de finalizar.")
-        return redirect("venda_detalhe", pk=venda.pk)
+        return redirect("loja:venda_detalhe", pk=venda.pk)
 
-    # baixa estoque só dos itens com produto cadastrado
-    for item in venda.itens.select_related("produto").all():
-        if item.produto_id:
-            p = item.produto
-            if p.estoque_atual < item.quantidade:
-                messages.error(request, f"Estoque insuficiente para {p.nome}. Estoque: {p.estoque_atual}")
-                return redirect("venda_detalhe", pk=venda.pk)
-            p.estoque_atual -= item.quantidade
-            p.save(update_fields=["estoque_atual"])
+    try:
+        with transaction.atomic():
+            itens_para_baixar = []
+            for item in venda.itens.select_related("produto").all():
+                if item.produto_id:
+                    p = item.produto
+                    if p.estoque_atual < item.quantidade:
+                        raise ValueError(f"Estoque insuficiente para {p.nome}. Restam: {p.estoque_atual}")
+                    itens_para_baixar.append((p, item.quantidade))
 
-    _recalcular_totais(venda)
-    criar_entrada_venda(venda)
+            # Realiza a baixa do estoque apenas se todos os itens forem aprovados
+            for p, qtd in itens_para_baixar:
+                p.estoque_atual -= qtd
+                p.save(update_fields=["estoque_atual"])
+
+            _recalcular_totais(venda)
+            # Ao migrar a transação, assumimos que criar_entrada_venda não lançará exception, 
+            # do contrário ela fará tudo entrar em fallback
+            criar_entrada_venda(venda)
+            
+    except ValueError as e:
+        messages.error(request, str(e))
+        return redirect("loja:venda_detalhe", pk=venda.pk)
 
     messages.success(request, "Venda finalizada e entrada registrada no financeiro.")
-    return redirect("venda_detalhe", pk=venda.pk)
+    return redirect("loja:venda_detalhe", pk=venda.pk)
 
 @login_required
 def loja_home(request):
     # Home da Loja: abre a Nova venda (evita 404 em /loja/)
     return redirect('venda_nova')
 
+
+
+# --- API simples para preencher preço/custo no formulário de venda ---
+from django.http import JsonResponse
+
+
+def produto_json(request, pk):
+    """Retorna JSON com preço e custo do produto (para autofill no formulário de venda).
+
+    Funciona tanto com o produto do app `produtos` (SaaS) quanto com o legado do app `loja`.
+    """
+    try:
+        from produtos.models import Produto as ProdutoCatalogo
+        obj = ProdutoCatalogo.objects.get(pk=pk)
+        preco = getattr(obj, 'preco_venda', getattr(obj, 'preco', None))
+        custo = getattr(obj, 'custo', None)
+    except Exception:
+        # fallback (legado)
+        obj = Produto.objects.get(pk=pk)
+        preco = getattr(obj, 'preco_venda', getattr(obj, 'preco', None))
+        custo = getattr(obj, 'custo', None)
+
+    return JsonResponse({
+        'id': obj.id,
+        'nome': getattr(obj, 'nome', ''),
+        'preco': float(preco) if preco is not None else None,
+        'custo': float(custo) if custo is not None else None,
+    })

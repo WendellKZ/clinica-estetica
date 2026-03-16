@@ -1,0 +1,7 @@
+{# Cole no seu base.html, controlando visibilidade por permissão #}
+{% if perms.core.view_dashboard %}<a href="{% url 'dashboard' %}">Dashboard</a>{% endif %}
+{% if perms.agenda.view_agendamento %}<a href="{% url 'agenda:agenda_semana' %}">Agenda</a>{% endif %}
+{% if perms.produtos.view_produto %}<a href="/produtos/">Produtos</a>{% endif %}
+{% if perms.servicos.view_servico %}<a href="/servicos/">Serviços</a>{% endif %}
+{% if perms.financeiro.view_lancamento %}<a href="/financeiro/">Financeiro</a>{% endif %}
+{% if perms.auth.view_user %}<a href="/usuarios/">Usuários</a>{% endif %}

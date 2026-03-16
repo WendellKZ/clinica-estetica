@@ -1,19 +1,16 @@
-# Patch V1.2.9.1 - Fix Agenda (NoReverseMatch)
+# Patch V1.3.3.2 — Correção NoReverseMatch (namespace agenda) no menu
 
 ## Problema
-O template novo referenciava a URL name `agenda_semana`, mas no seu projeto essa rota não está registrada com esse nome.
+Após o patch do menu "Administração", apareceu:
+NoReverseMatch: 'agenda' is not a registered namespace
 
-## Correção
-Removi os botões "Semana anterior/Hoje/Próxima semana" que dependiam de `agenda_semana`, mantendo:
-- Cabeçalho
-- Botão "Novo agendamento"
-- Layout responsivo (mobile/tablet) com `dias`
+Isso ocorre porque o projeto atual não usa namespace (ex: agenda:agenda) nas URLs.
 
-## Aplicar
-1) Pare o servidor
-2) Extraia o ZIP na raiz (sobrescrevendo)
-3) Rode: python manage.py runserver
-4) Ctrl+F5 no navegador
+## Solução
+Este patch ajusta o `templates/base.html` para usar URLs seguras (paths diretos)
+sem namespace, mantendo o dropdown **Administração** (Usuários + Serviços).
 
-## Próximo passo (opcional)
-Se você quiser a navegação semanal, eu preparo um patch para registrar a rota `agenda_semana` no `agenda/urls.py`.
+## Como aplicar
+1) Extraia o zip na raiz do projeto (mesmo nível do manage.py), sobrescrevendo.
+2) Reinicie:
+   python manage.py runserver

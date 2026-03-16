@@ -1,0 +1,2 @@
+Adicione em INSTALLED_APPS:
+    'servicos',

@@ -1,0 +1,46 @@
+from django.contrib.auth.decorators import login_required
+from django.db.utils import OperationalError, ProgrammingError
+from django.shortcuts import render
+
+from agenda.models import Agendamento
+from clientes.models import Cliente
+from loja.models import Venda
+
+
+@login_required
+def dashboard(request):
+    """Dashboard principal.
+
+    Quando estamos migrando para Multi-clínica, pode existir o app `empresas`.
+    Se as migrations ainda não foram aplicadas, o Django pode estourar
+    `OperationalError: no such table: empresas_empresa`.
+
+    Este dashboard fica resiliente: se faltar a tabela, ele carrega e mostra um
+    aviso para rodar as migrations.
+    """
+
+    total_clientes = Cliente.objects.count()
+    total_agendamentos = Agendamento.objects.count()
+    total_vendas = Venda.objects.count()
+
+    empresa = None
+    precisa_migrar_empresas = False
+
+    try:
+        from empresas.models import Empresa
+        try:
+            empresa = Empresa.objects.first()
+        except (OperationalError, ProgrammingError):
+            precisa_migrar_empresas = True
+    except ModuleNotFoundError:
+        # App ainda não foi adicionado
+        empresa = None
+
+    context = {
+        "total_clientes": total_clientes,
+        "total_agendamentos": total_agendamentos,
+        "total_vendas": total_vendas,
+        "empresa": empresa,
+        "precisa_migrar_empresas": precisa_migrar_empresas,
+    }
+    return render(request, "dashboard.html", context)

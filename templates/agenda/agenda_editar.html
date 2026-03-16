@@ -1,0 +1,188 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Editar agendamento | Sistema Clínica{% endblock %}
+
+{% block content %}
+<div class="page-hero mb-3">
+  <div class="d-flex justify-content-between align-items-start flex-wrap gap-2">
+    <div>
+      <h1 class="h3 mb-1">Editar agendamento</h1>
+      <div class="text-muted">Atualize as informações e salve.</div>
+    </div>
+    <a class="btn btn-outline-primary btn-pill" href="{% url 'agenda:agenda_lista' %}">
+      <i class="bi bi-arrow-left"></i> Voltar
+    </a>
+  </div>
+</div>
+
+{% if messages %}
+  <div class="mb-3">
+    {% for message in messages %}
+      <div class="alert alert-{{ message.tags|default:'info' }} shadow-sm">{{ message }}</div>
+    {% endfor %}
+  </div>
+{% endif %}
+
+{% if form.errors %}
+  <div class="alert alert-danger d-flex align-items-start gap-2" role="alert">
+    <i class="bi bi-exclamation-triangle"></i>
+    <div>
+      <div class="fw-semibold">Não foi possível agendar.</div>
+      <div class="small">Confira os campos destacados abaixo.</div>
+      {% if form.non_field_errors %}
+        <div class="mt-2">{{ form.non_field_errors }}</div>
+      {% endif %}
+    </div>
+  </div>
+{% endif %}
+
+
+<div class="card card-soft">
+  <div class="card-body">
+    <form method="post" novalidate>
+      {% csrf_token %}
+
+      <div class="row g-3">
+        <!-- CLIENTE -->
+        <div class="col-12 col-lg-7">
+          <label class="form-label">Buscar cliente (filtra a lista)</label>
+          <input type="text" class="form-control form-control-lg" id="filtroCliente" placeholder="Digite para filtrar clientes..." autocomplete="off">
+          <div class="form-text">Opcional. Use para achar rápido um cliente na lista.</div>
+        </div>
+
+        <div class="col-12 col-lg-5">
+          <div class="d-flex justify-content-between align-items-center">
+            <label class="form-label mb-0">Cliente (selecionar)</label>
+            <div class="d-flex gap-2">
+              {% if pode_sync_servicos %}
+              <a href="{% url 'agenda:agenda_lista' %}" class="btn btn-sm btn-outline-secondary btn-pill">
+                <i class="bi bi-arrow-repeat"></i> Sincronizar serviços
+              </a>
+              {% endif %}
+              <button class="btn btn-sm btn-outline-primary btn-pill" type="button" data-bs-toggle="collapse" data-bs-target="#collapseClienteRapido">
+                <i class="bi bi-person-plus"></i> Cadastrar cliente na hora
+              </button>
+              <button class="btn btn-sm btn-outline-secondary btn-pill" type="button" data-bs-toggle="collapse" data-bs-target="#collapseObs">
+                <i class="bi bi-chat-left-text"></i> Observações
+              </button>
+            </div>
+          </div>
+          {{ form.cliente }}
+          {% if form.cliente.errors %}<div class="text-danger small mt-1">{{ form.cliente.errors|striptags }}</div>{% endif %}
+          <div class="form-text">Ou preencha abaixo para cadastrar na hora.</div>
+        </div>
+
+        <!-- CLIENTE RÁPIDO -->
+        <div class="col-12">
+          <div class="collapse" id="collapseClienteRapido">
+            <div class="card card-inner">
+              <div class="card-body">
+                <div class="row g-3">
+                  <div class="col-12 col-lg-6">
+                    <label class="form-label">Cliente (nome)</label>
+                    {{ form.cliente_nome }}
+          {% if form.cliente_nome.errors %}<div class="text-danger small mt-1">{{ form.cliente_nome.errors|striptags }}</div>{% endif %}
+                  </div>
+                  <div class="col-12 col-lg-3">
+                    <label class="form-label">Telefone</label>
+                    {{ form.cliente_telefone }}
+                  </div>
+                  <div class="col-12 col-lg-3">
+                    <label class="form-label">E-mail</label>
+                    {{ form.cliente_email }}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- SERVIÇO / PROFISSIONAL -->
+        <div class="col-12 col-lg-6">
+          <label class="form-label">Serviço</label>
+          {{ form.servico }}
+          {% if form.servico.errors %}<div class="text-danger small mt-1">{{ form.servico.errors|striptags }}</div>{% endif %}
+          <div class="form-text">Ao selecionar o serviço, a duração é sugerida automaticamente.</div>
+        </div>
+        <div class="col-12 col-lg-6">
+          <label class="form-label">Profissional</label>
+          {{ form.profissional }}
+          {% if form.profissional.errors %}<div class="text-danger small mt-1">{{ form.profissional.errors|striptags }}</div>{% endif %}
+        </div>
+
+        <!-- DATAS -->
+        <div class="col-12 col-lg-3">
+          <label class="form-label">Início</label>
+          {{ form.inicio }}
+          {% if form.inicio.errors %}<div class="text-danger small mt-1">{{ form.inicio.errors|striptags }}</div>{% endif %}
+        </div>
+        <div class="col-12 col-lg-3">
+          <label class="form-label">Duração</label>
+          {{ form.duracao }}
+          {% if form.duracao.errors %}<div class="text-danger small mt-1">{{ form.duracao.errors|striptags }}</div>{% endif %}
+        </div>
+        <div class="col-12 col-lg-3">
+          <label class="form-label">Fim (auto)</label>
+          {{ form.fim }}
+          {% if form.fim.errors %}<div class="text-danger small mt-1">{{ form.fim.errors|striptags }}</div>{% endif %}
+          <div class="form-text">Calculado automaticamente pela duração (você pode ajustar se quiser).</div>
+        </div>
+        <div class="col-12 col-lg-3">
+          <label class="form-label">Status</label>
+          {{ form.status }}
+          {% if form.status.errors %}<div class="text-danger small mt-1">{{ form.status.errors|striptags }}</div>{% endif %}
+        </div>
+
+        <!-- OBSERVAÇÕES -->
+        <div class="col-12">
+          <div class="collapse" id="collapseObs">
+            <label class="form-label">Observações</label>
+            {{ form.observacoes }}
+          {% if form.observacoes.errors %}<div class="text-danger small mt-1">{{ form.observacoes.errors|striptags }}</div>{% endif %}
+          </div>
+        </div>
+      </div>
+
+      <hr class="my-4">
+
+      <div class="d-flex flex-wrap gap-2">
+        <button class="btn btn-primary btn-lg btn-pill" type="submit" name="acao" value="salvar">
+          <i class="bi bi-check2-circle"></i> Agendar
+        </button>
+        <a class="btn btn-outline-secondary btn-lg btn-pill" href="{% url 'agenda:agenda_lista' %}">
+          Cancelar
+        </a>
+      </div>
+
+      <div class="form-text mt-3">
+        <strong>Validação:</strong> o sistema bloqueia conflito de horário para o mesmo profissional.
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+(function(){
+  // Filtro rápido do select de clientes: funciona com <select> normal
+  const input = document.getElementById('filtroCliente');
+  const select = document.getElementById('{{ form.cliente.id_for_label }}') || document.querySelector('select[name="cliente"]');
+  if(!input || !select) return;
+
+  const original = Array.from(select.options).map(o => ({value:o.value, text:o.text, selected:o.selected}));
+  input.addEventListener('input', function(){
+    const q = (this.value || '').toLowerCase().trim();
+    select.innerHTML = '';
+    original
+      .filter(o => !q || (o.text||'').toLowerCase().includes(q))
+      .forEach(o => {
+        const opt = document.createElement('option');
+        opt.value = o.value;
+        opt.textContent = o.text;
+        if (o.selected) opt.selected = true;
+        select.appendChild(opt);
+      });
+  });
+})();
+</script>
+{% endblock %}

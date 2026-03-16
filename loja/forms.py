@@ -33,11 +33,19 @@ class AddItemForm(forms.Form):
         preco = data.get("preco_unitario")
         custo = data.get("custo_unitario")
 
-        if not produto and not nome:
+        # PREMIUM: se escolheu produto cadastrado, força preço/custo corretos no backend
+        if produto:
+            data["item_nome"] = ""  # não precisa digitar nome manualmente
+            data["preco_unitario"] = produto.preco_venda
+            data["custo_unitario"] = produto.custo
+            return data
+
+        # Manual (sem produto cadastrado)
+        if not nome:
             raise forms.ValidationError("Selecione um produto OU informe o nome do produto.")
-        if not produto and preco is None:
+        if preco is None:
             raise forms.ValidationError("Informe o preço do item.")
-        # ✅ Para manter LUCRO REAL correto, custo vira obrigatório quando não há produto cadastrado
-        if not produto and custo is None:
+        # ✅ Para manter LUCRO REAL correto, custo vira obrigatório no manual
+        if custo is None:
             raise forms.ValidationError("Informe também o custo do item (para manter o lucro real correto).")
         return data

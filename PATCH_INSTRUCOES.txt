@@ -1,0 +1,18 @@
+PATCH V1.3.2.1 — BLOQUEAR DJANGO ADMIN
+
+1) Copie os arquivos deste patch para a raiz do projeto.
+
+2) Em estetica/settings.py:
+   - Adicione no MIDDLEWARE (logo após AuthenticationMiddleware):
+
+     'core.middleware.AdminBlockerMiddleware',
+
+   - Configure o usuário DEV:
+
+     ADMIN_DEV_USERNAMES = ['admin']  # troque para seu usuário de desenvolvedor
+
+3) Reinicie o servidor.
+
+Resultado:
+- /admin fica invisível (404) para qualquer usuário fora da lista.
+- Admin do sistema gerencia tudo pelo menu Usuários.

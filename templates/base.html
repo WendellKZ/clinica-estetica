@@ -1,89 +1,125 @@
 {% load static %}
-{% load roles %}
 <!doctype html>
 <html lang="pt-br">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>{% block title %}Clínica Estética{% endblock %}</title>
+  <title>{% block title %}Sistema Clínica{% endblock %}</title>
 
+  <!-- Bootstrap -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
-  <link href="{% static 'css/theme.css' %}" rel="stylesheet">
-  <link href="{% static 'css/mobile.css' %}" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+
+  <!-- SaaS Theme -->
+  <link rel="stylesheet" href="{% static 'css/estetica_dashboard.css' %}">
+
+  {% block extra_head %}{% endblock %}
 </head>
-<body>
-  <nav class="navbar navbar-expand-lg navbar-dark" style="background: linear-gradient(90deg,#0b1524,#1c2a3a);">
-    <div class="container-fluid">
-      <a class="navbar-brand d-flex align-items-center gap-2" href="/">
-        <img src="{% static 'img/logo.png' %}" alt="Logo" width="34" height="34" class="rounded-3" style="object-fit:cover;">
-        <div class="lh-sm">
-          <div class="fw-semibold">Elisângela Barbosa</div>
-          <div class="small text-white-50">Estética</div>
-        </div>
-      </a>
 
-      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarsExample">
-        <span class="navbar-toggler-icon"></span>
+<body class="bg-saas">
+  <div class="app-container">
+    
+    <!-- Topbar Mobile -->
+    <div class="mobile-topbar d-lg-none">
+      <div class="brand-text d-flex align-items-center gap-2">
+        <div class="brand-icon"><i class="bi bi-flower1"></i></div>
+        Estética V1
+      </div>
+      <button class="btn btn-light border-0 shadow-sm" type="button" onclick="document.getElementById('sidebar').classList.toggle('show')">
+        <i class="bi bi-list fs-4"></i>
       </button>
+    </div>
 
-      <div class="collapse navbar-collapse" id="navbarsExample">
-        <ul class="navbar-nav me-auto mb-2 mb-lg-0">
-          {% if user.is_authenticated %}
-            {% if user|is_admin_user %}
-              <li class="nav-item">
-                <a class="nav-link" href="/"><i class="bi bi-speedometer2 me-1"></i>Dashboard</a>
-              </li>
-            {% endif %}
-
-            <li class="nav-item">
-              <a class="nav-link" href="/agenda/"><i class="bi bi-calendar2-week me-1"></i>Agenda</a>
-            </li>
-
-            {% can_access_backoffice user as can_back %}
-            {% if can_back %}
-              <li class="nav-item">
-                <a class="nav-link" href="/clientes/"><i class="bi bi-people me-1"></i>Clientes</a>
-              </li>
-              <li class="nav-item">
-                <a class="nav-link" href="/loja/"><i class="bi bi-bag me-1"></i>Venda (Loja)</a>
-              </li>
-              <li class="nav-item">
-                <a class="nav-link" href="/financeiro/"><i class="bi bi-cash-coin me-1"></i>Financeiro</a>
-              </li>
-            {% endif %}
-
-            {% if user.is_superuser or user.is_staff %}
-              <li class="nav-item">
-                <a class="nav-link" href="/admin/"><i class="bi bi-gear me-1"></i>Admin</a>
-              </li>
-            {% endif %}
-          {% endif %}
-        </ul>
-
-        <div class="d-flex gap-2 align-items-center">
-          {% if user.is_authenticated %}
-            <span class="text-white-50 small"><i class="bi bi-person-circle me-1"></i>{{ user.username }}</span>
-            <a class="btn btn-outline-light btn-sm" href="/logout/"><i class="bi bi-box-arrow-right me-1"></i>Sair</a>
-          {% endif %}
+    <!-- Sidebar Principal -->
+    <aside class="sidebar" id="sidebar">
+      <div class="brand-section">
+        <div class="brand-icon"><i class="bi bi-flower1"></i></div>
+        <div class="brand-text">Sistema Clínica</div>
+        <div class="ms-auto d-lg-none">
+          <button class="btn btn-sm btn-light border-0" onclick="document.getElementById('sidebar').classList.remove('show')">
+            <i class="bi bi-x-lg"></i>
+          </button>
         </div>
       </div>
-    </div>
-  </nav>
 
-  <main class="container-fluid py-4">
-    {% if messages %}
-      <div class="container" style="max-width: 1100px;">
-        {% for m in messages %}
-          <div class="alert alert-{{ m.tags }} mb-2">{{ m }}</div>
-        {% endfor %}
+      <nav class="nav-menu">
+        {% if user.is_authenticated %}
+          {% if user.is_superuser %}
+            <a class="nav-item {% if request.path == '/' %}active{% endif %}" href="/">
+              <i class="bi bi-grid-1x2"></i> Dashboard
+            </a>
+          {% endif %}
+            <a class="nav-item {% if 'agenda' in request.path %}active{% endif %}" href="/agenda/">
+              <i class="bi bi-calendar-check"></i> Agenda
+            </a>
+            <a class="nav-item {% if 'clientes' in request.path %}active{% endif %}" href="/clientes/">
+              <i class="bi bi-people"></i> Clientes
+            </a>
+            <a class="nav-item {% if 'loja' in request.path %}active{% endif %}" href="/loja/venda/nova/">
+              <i class="bi bi-bag"></i> Loja / Vendas
+            </a>
+            <a class="nav-item {% if 'financeiro' in request.path %}active{% endif %}" href="/financeiro/">
+              <i class="bi bi-currency-dollar"></i> Financeiro
+            </a>
+
+          {% if user.is_superuser %}
+            <div class="text-muted small fw-bold mt-4 mb-2 px-3">ADMINISTRAÇÃO</div>
+            <a class="nav-item {% if 'usuarios' in request.path %}active{% endif %}" href="/usuarios/">
+              <i class="bi bi-person-badge"></i> Usuários
+            </a>
+            <a class="nav-item {% if 'servicos' in request.path %}active{% endif %}" href="/servicos/">
+              <i class="bi bi-stars"></i> Serviços
+            </a>
+            <a class="nav-item {% if 'produtos' in request.path %}active{% endif %}" href="/produtos/">
+              <i class="bi bi-box"></i> Estoque
+            </a>
+          {% endif %}
+        {% endif %}
+      </nav>
+
+      {% if user.is_authenticated %}
+      <div class="user-profile">
+        <div class="user-info">
+          <div class="avatar">{{ user.username|make_list|first|upper }}</div>
+          <div class="d-flex flex-column lh-sm">
+            <span class="fw-semibold text-dark" style="font-size:0.9rem">{{ user.username }}</span>
+            <span class="text-muted" style="font-size:0.75rem">{% if user.is_superuser %}Admin{% else %}Profissional{% endif %}</span>
+          </div>
+        </div>
+        <a href="{% url 'logout' %}" class="btn btn-sm btn-light text-danger" title="Sair"><i class="bi bi-box-arrow-right"></i></a>
       </div>
-    {% endif %}
+      {% endif %}
+    </aside>
 
-    <div class="container" style="max-width: 1100px;">
-      {% block content %}{% endblock %}
-    </div>
-  </main>
+    <!-- Conteúdo Principal -->
+    <main class="main-content">
+      
+      <!-- Cabeçalho (Opcional, pode conter barra de breadcrumb ou pesquisa) -->
+      <header class="top-header">
+        <div class="fs-5 fw-semibold text-dark">
+          {% block header_title %}Clínica Estética{% endblock %}
+        </div>
+        <div class="d-flex align-items-center gap-3">
+           <a href="/agenda/novo/" class="btn-estetica text-decoration-none shadow-sm"><i class="bi bi-plus"></i> Agendar</a>
+        </div>
+      </header>
+
+      <!-- Área de injeção dos templates das páginas com largura limitadora -->
+      <div class="content-wrapper">
+        {% if messages %}
+          {% for message in messages %}
+            <div class="alert alert-{{ message.tags|default:'info' }} alert-dismissible fade show border-0 shadow-sm" role="alert">
+              {{ message }}
+              <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+          {% endfor %}
+        {% endif %}
+        
+        {% block content %}{% endblock %}
+      </div>
+    </main>
+
+  </div>
 
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 </body>

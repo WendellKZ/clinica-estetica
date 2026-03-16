@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+{% block title %}{% if modo == 'novo' %}Novo usuário{% else %}Editar usuário{% endif %} | Sistema Clínica{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <div>
+    <h2 class="mb-0">{% if modo == 'novo' %}Novo usuário{% else %}Editar usuário{% endif %}</h2>
+    <div class="text-muted">{% if modo == 'novo' %}Crie o usuário e defina perfis.{% else %}Atualize dados e perfis.{% endif %}</div>
+  </div>
+  <a class="btn btn-outline-secondary" href="{% url 'usuarios:usuario_lista' %}"><i class="bi bi-arrow-left me-1"></i>Voltar</a>
+</div>
+
+<div class="card shadow-sm border-0 rounded-3">
+  <div class="card-body">
+    <form method="post" class="row g-3">
+      {% csrf_token %}
+
+      <div class="col-12 col-md-4">
+        <label class="form-label">{{ form.username.label }}</label>
+        {{ form.username }}
+        {% for e in form.username.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
+      </div>
+      <div class="col-12 col-md-4">
+        <label class="form-label">{{ form.first_name.label }}</label>
+        {{ form.first_name }}
+      </div>
+      <div class="col-12 col-md-4">
+        <label class="form-label">{{ form.last_name.label }}</label>
+        {{ form.last_name }}
+      </div>
+
+      <div class="col-12 col-md-6">
+        <label class="form-label">{{ form.email.label }}</label>
+        {{ form.email }}
+      </div>
+
+      <div class="col-12 col-md-6">
+        <label class="form-label">{{ form.groups.label }}</label>
+        {{ form.groups }}
+        <div class="form-text">Ex.: Recepcao</div>
+      </div>
+
+      <div class="col-12 col-md-4">
+        <div class="form-check mt-4">
+          {{ form.is_active }}
+          <label class="form-check-label" for="{{ form.is_active.id_for_label }}">{{ form.is_active.label }}</label>
+        </div>
+      </div>
+      <div class="col-12 col-md-4">
+        <div class="form-check mt-4">
+          {{ form.is_staff }}
+          <label class="form-check-label" for="{{ form.is_staff.id_for_label }}">{{ form.is_staff.label }}</label>
+        </div>
+      </div>
+      <div class="col-12 col-md-4">
+        <div class="form-check mt-4">
+          {{ form.is_superuser }}
+          <label class="form-check-label" for="{{ form.is_superuser.id_for_label }}">{{ form.is_superuser.label }}</label>
+        </div>
+      </div>
+
+      {% if modo == 'novo' %}
+      <div class="col-12 col-md-6">
+        <label class="form-label">{{ form.password.label }}</label>
+        {{ form.password }}
+        {% for e in form.password.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
+      </div>
+      <div class="col-12 col-md-6">
+        <label class="form-label">{{ form.password2.label }}</label>
+        {{ form.password2 }}
+        {% for e in form.password2.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
+      </div>
+      {% endif %}
+
+      {% for e in form.non_field_errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
+
+      <div class="col-12 d-flex gap-2">
+        <button class="btn btn-primary" type="submit"><i class="bi bi-check2-circle me-1"></i>Salvar</button>
+        <a class="btn btn-outline-secondary" href="{% url 'usuarios:usuario_lista' %}">Cancelar</a>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

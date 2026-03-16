@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% block title %}{% if modo == 'novo' %}Novo serviço{% else %}Editar serviço{% endif %} | Sistema Clínica{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <div>
+    <h2 class="mb-0">{% if modo == 'novo' %}Novo serviço{% else %}Editar serviço{% endif %}</h2>
+    <div class="text-muted">Nome, duração e valores padrão.</div>
+  </div>
+  <a class="btn btn-outline-secondary" href="{% url 'servicos:servico_lista' %}"><i class="bi bi-arrow-left me-1"></i>Voltar</a>
+</div>
+
+<div class="card shadow-sm border-0 rounded-3">
+  <div class="card-body">
+    <form method="post" class="row g-3">
+      {% csrf_token %}
+      <div class="col-12">
+        <label class="form-label">Nome</label>
+        {{ form.nome }}
+        {% for e in form.nome.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
+      </div>
+      <div class="col-12 col-md-4">
+        <label class="form-label">Duração (min)</label>
+        {{ form.duracao_min }}
+      </div>
+      <div class="col-12 col-md-4">
+        <label class="form-label">Preço padrão (R$)</label>
+        {{ form.preco_padrao }}
+      </div>
+      <div class="col-12 col-md-4">
+        <label class="form-label">Custo padrão (R$)</label>
+        {{ form.custo_padrao }}
+      </div>
+      <div class="col-12">
+        <div class="form-check">
+          {{ form.ativo }}
+          <label class="form-check-label" for="{{ form.ativo.id_for_label }}">Ativo</label>
+        </div>
+      </div>
+
+      {% for e in form.non_field_errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
+
+      <div class="col-12 d-flex gap-2">
+        <button class="btn btn-primary" type="submit"><i class="bi bi-check2-circle me-1"></i>Salvar</button>
+        <a class="btn btn-outline-secondary" href="{% url 'servicos:servico_lista' %}">Cancelar</a>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

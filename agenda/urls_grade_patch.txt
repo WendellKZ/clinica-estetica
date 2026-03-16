@@ -1,0 +1,5 @@
+# ADICIONE no topo do agenda/urls.py:
+from .views_grade import agenda_grade
+
+# E ADICIONE nas urlpatterns:
+path("grade/", agenda_grade, name="agenda_grade"),

@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+{% block title %}{% if modo == "editar" %}Editar{% else %}Novo{% endif %} produto | Sistema Clínica{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <div>
+      <h1 class="h3 mb-1">{% if modo == "editar" %}Editar{% else %}Novo{% endif %} produto</h1>
+      <div class="text-muted">Preencha os dados do produto.</div>
+    </div>
+    <a class="btn btn-outline-secondary" href="{% url 'produtos_lista' %}">Voltar</a>
+  </div>
+
+  <div class="card shadow-sm border-0">
+    <div class="card-body">
+      <form method="post" novalidate>
+        {% csrf_token %}
+
+        {% if form.non_field_errors %}
+          <div class="alert alert-danger">{{ form.non_field_errors }}</div>
+        {% endif %}
+
+        <div class="mb-3">
+          <label class="form-label">Nome</label>
+          {{ form.nome }}
+          {% if form.nome.errors %}<div class="text-danger small">{{ form.nome.errors }}</div>{% endif %}
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label">Descrição</label>
+          {{ form.descricao }}
+          {% if form.descricao.errors %}<div class="text-danger small">{{ form.descricao.errors }}</div>{% endif %}
+        </div>
+
+        <div class="row g-3">
+          <div class="col-md-4">
+            <label class="form-label">Preço (R$)</label>
+            {{ form.preco }}
+            {% if form.preco.errors %}<div class="text-danger small">{{ form.preco.errors }}</div>{% endif %}
+          </div>
+          <div class="col-md-4 d-flex align-items-end">
+            <div class="form-check">
+              {{ form.ativo }}
+              <label class="form-check-label">Ativo</label>
+            </div>
+          </div>
+        </div>
+
+        <hr class="my-4">
+
+        <button class="btn btn-primary" type="submit">Salvar</button>
+        <a class="btn btn-link" href="{% url 'produtos_lista' %}">Cancelar</a>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

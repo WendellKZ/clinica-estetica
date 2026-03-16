@@ -1,44 +1,88 @@
 {% extends "base.html" %}
-{% block title %}Dashboard | Elisângela Barbosa Estética{% endblock %}
+{% block title %}Visão Geral | Sistema Clínica{% endblock %}
+
+{% block header_title %}Visão Geral{% endblock %}
+
 {% block content %}
-  <div class="d-flex justify-content-between align-items-center mb-3">
+<div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
+  <div>
+    <h4 class="mb-1 text-dark fw-bold">Olá, {{ user.username }}</h4>
+    <div class="text-muted">Acompanhe seu desempenho financeiro hoje e no mês atual.</div>
+  </div>
+  <div class="d-flex gap-2">
+    <a class="btn-estetica-outline" href="/financeiro/">Ver Relatórios</a>
+  </div>
+</div>
+
+<div class="row g-4 mb-4">
+  <!-- Card Hoje -->
+  <div class="col-12 col-md-6 col-lg-3">
+    <div class="stat-card">
+      <div class="stat-icon icon-primary"><i class="bi bi-calendar-event"></i></div>
+      <div class="stat-value">R$ {{ hoje.lucro_real|default:"0,00" }}</div>
+      <div class="stat-label">Lucro Real (Hoje)</div>
+
+      <div class="mt-3 pt-3 border-top d-flex flex-column gap-1 small">
+        <div class="d-flex justify-content-between text-muted">
+          <span>Entradas:</span> <span class="text-success">+R$ {{ hoje.entradas|default:"0,00" }}</span>
+        </div>
+        <div class="d-flex justify-content-between text-muted">
+          <span>Saídas/Custos:</span> <span class="text-danger">-R$ {{ hoje.saidas_totais|default:"0,00" }}</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Card Mês -->
+  <div class="col-12 col-md-6 col-lg-3">
+    <div class="stat-card">
+      <div class="stat-icon icon-success"><i class="bi bi-graph-up-arrow"></i></div>
+      <div class="stat-value">R$ {{ mes.lucro_real|default:"0,00" }}</div>
+      <div class="stat-label">Lucro Real (Mês)</div>
+
+      <div class="mt-3 pt-3 border-top d-flex flex-column gap-1 small">
+        <div class="d-flex justify-content-between text-muted">
+          <span>Entradas:</span> <span class="text-success">+R$ {{ mes.entradas|default:"0,00" }}</span>
+        </div>
+        <div class="d-flex justify-content-between text-muted">
+          <span>Saídas/Custos:</span> <span class="text-danger">-R$ {{ mes.saidas_totais|default:"0,00" }}</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Card Estoque / Produtos -->
+  <div class="col-12 col-md-6 col-lg-3">
+    <div class="stat-card justify-content-center">
+      <div class="stat-icon icon-warning"><i class="bi bi-box-seam"></i></div>
+      <div class="stat-value">{{ produtos_count|default:"-" }}</div>
+      <div class="stat-label">Produtos Cadastrados</div>
+    </div>
+  </div>
+
+  <!-- Card Clientes -->
+  <div class="col-12 col-md-6 col-lg-3">
+    <div class="stat-card justify-content-center">
+      <div class="stat-icon icon-primary" style="background-color:rgba(123, 161, 199, 0.15); color:#4A90E2"><i
+          class="bi bi-people"></i></div>
+      <div class="stat-value">{{ clientes_count|default:"-" }}</div>
+      <div class="stat-label">Clientes Registrados</div>
+    </div>
+  </div>
+</div>
+
+<div class="card stat-card mt-3">
+  <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
     <div>
-      <h2 class="mb-0">Dashboard</h2>
-      <div class="text-muted">Visão rápida do dia e do mês (lucro real)</div>
+      <h6 class="mb-1 text-dark fw-bold">Acesso Rápido</h6>
+      <p class="text-muted small mb-0">Opções comuns do seu dia-a-dia</p>
     </div>
-    <div class="d-flex gap-2">
-      <a class="btn btn-outline-secondary" href="/agenda/"><i class="bi bi-calendar2-week me-1"></i>Ir para Agenda</a>
-      <a class="btn btn-outline-secondary" href="/financeiro/"><i class="bi bi-cash-coin me-1"></i>Ir para Financeiro</a>
-    </div>
-  </div>
-
-  <div class="alert alert-info">
-    <i class="bi bi-info-circle me-1"></i>
-    Este dashboard é exclusivo do Admin. (Nos próximos patches, vamos plugar os números reais aqui.)
-  </div>
-
-  <div class="row g-3">
-    <div class="col-12 col-lg-6">
-      <div class="card shadow-sm">
-        <div class="card-header bg-white"><strong>Hoje</strong></div>
-        <div class="card-body">
-          <div class="text-muted mb-2">Atalhos rápidos:</div>
-          <div class="d-flex flex-wrap gap-2">
-            <a class="btn btn-primary" href="/agenda/novo/"><i class="bi bi-plus-circle me-1"></i>Novo agendamento</a>
-            <a class="btn btn-outline-primary" href="/loja/vendas/nova/"><i class="bi bi-bag-plus me-1"></i>Nova venda</a>
-            <a class="btn btn-outline-secondary" href="/financeiro/novo/"><i class="bi bi-plus-square me-1"></i>Novo lançamento</a>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <div class="col-12 col-lg-6">
-      <div class="card shadow-sm">
-        <div class="card-header bg-white"><strong>Mês (até hoje)</strong></div>
-        <div class="card-body">
-          <div class="text-muted">Vamos conectar aqui o resumo mensal com lucro real no patch do Financeiro.</div>
-        </div>
-      </div>
+    <div class="d-flex gap-2 flex-wrap">
+      <a class="btn-estetica-outline" href="/agenda/novo/"><i class="bi bi-calendar-plus me-1"></i>Novo Agendamento</a>
+      <a class="btn-estetica-outline" href="/loja/vendas/nova/"><i class="bi bi-bag-plus me-1"></i>Nova Venda</a>
+      <a class="btn-estetica-outline" href="/financeiro/novo/"><i class="bi bi-cash me-1"></i>Lançamento Caixa</a>
     </div>
   </div>
+</div>
+
 {% endblock %}

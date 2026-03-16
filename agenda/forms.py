@@ -1,8 +1,11 @@
 from datetime import timedelta
+
 from django import forms
+from django.utils import timezone
 
 from .models import Agendamento
 from clientes.models import Cliente
+
 
 class AgendamentoForm(forms.ModelForm):
     cliente = forms.ModelChoiceField(
@@ -31,9 +34,9 @@ class AgendamentoForm(forms.ModelForm):
         model = Agendamento
         fields = ["cliente", "profissional", "servico", "inicio", "fim", "status", "observacoes"]
         widgets = {
-            "inicio": forms.DateTimeInput(attrs={"type":"datetime-local"}),
-            "fim": forms.DateTimeInput(attrs={"type":"datetime-local"}),
-            "observacoes": forms.Textarea(attrs={"rows":3}),
+            "inicio": forms.DateTimeInput(format="%Y-%m-%dT%H:%M", attrs={"type": "datetime-local"}),
+            "fim": forms.DateTimeInput(format="%Y-%m-%dT%H:%M", attrs={"type": "datetime-local"}),
+            "observacoes": forms.Textarea(attrs={"rows": 3}),
         }
 
     def clean(self):
@@ -47,6 +50,23 @@ class AgendamentoForm(forms.ModelForm):
         inicio = cleaned.get("inicio")
         fim = cleaned.get("fim")
         duracao = cleaned.get("duracao_min")
+
+        # ✅ Premium: bloqueia datas retroativas (mas permite salvar agendamento antigo se não mexer no início)
+        if inicio:
+            now = timezone.localtime(timezone.now())
+            if self.instance and getattr(self.instance, "pk", None):
+                # edição: só bloqueia se tentar colocar um início novo no passado
+                try:
+                    original_inicio = self.instance.inicio
+                except Exception:
+                    original_inicio = None
+                if original_inicio and timezone.localtime(original_inicio) != timezone.localtime(inicio):
+                    if timezone.localtime(inicio) < now:
+                        raise forms.ValidationError("Não é permitido agendar em datas/horários retroativos.")
+            else:
+                # criação
+                if timezone.localtime(inicio) < now:
+                    raise forms.ValidationError("Não é permitido agendar em datas/horários retroativos.")
 
         if inicio and (not fim) and duracao:
             try:
@@ -65,7 +85,25 @@ class AgendamentoForm(forms.ModelForm):
         cliente = self.cleaned_data.get("cliente")
         if cliente:
             return cliente
+
         nome = (self.cleaned_data.get("cliente_nome") or "").strip()
-        tel = (self.cleaned_data.get("cliente_telefone") or "").strip()
-        email = (self.cleaned_data.get("cliente_email") or "").strip()
-        return Cliente.objects.create(nome=nome, telefone=tel, email=email)
+        if not nome:
+            return None
+
+        defaults = {
+            "telefone": (self.cleaned_data.get("cliente_telefone") or "").strip(),
+            "email": (self.cleaned_data.get("cliente_email") or "").strip(),
+        }
+        obj, _ = Cliente.objects.get_or_create(nome=nome, defaults=defaults)
+        return obj
+
+    def save(self, commit=True):
+        inst = super().save(commit=False)
+        # se não escolheu cliente, cadastra na hora
+        if not getattr(inst, "cliente_id", None):
+            c = self.get_or_create_cliente()
+            if c:
+                inst.cliente = c
+        if commit:
+            inst.save()
+        return inst

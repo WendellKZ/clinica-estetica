@@ -3,6 +3,7 @@ from django.core.validators import MinValueValidator
 from decimal import Decimal
 
 class Produto(models.Model):
+    empresa = models.ForeignKey("empresas.Empresa", null=True, blank=True, on_delete=models.PROTECT, related_name="produtos")
     nome = models.CharField(max_length=150)
     sku = models.CharField(max_length=50, blank=True)
     custo = models.DecimalField(max_digits=10, decimal_places=2, validators=[MinValueValidator(Decimal("0"))])
@@ -15,6 +16,7 @@ class Produto(models.Model):
         return self.nome
 
 class Venda(models.Model):
+    empresa = models.ForeignKey("empresas.Empresa", null=True, blank=True, on_delete=models.PROTECT, related_name="vendas")
     FORMA_CHOICES = [
         ("PIX", "Pix"),
         ("DINHEIRO", "Dinheiro"),
@@ -37,7 +39,6 @@ class VendaItem(models.Model):
     quantidade = models.IntegerField(validators=[MinValueValidator(1)])
     preco_unitario = models.DecimalField(max_digits=10, decimal_places=2)
     custo_unitario = models.DecimalField(max_digits=10, decimal_places=2)
-
     subtotal = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     custo_total = models.DecimalField(max_digits=10, decimal_places=2, default=0)
 

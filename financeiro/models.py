@@ -3,6 +3,8 @@ from decimal import Decimal
 from django.core.validators import MinValueValidator
 
 class LancamentoFinanceiro(models.Model):
+    empresa = models.ForeignKey("empresas.Empresa", null=True, blank=True, on_delete=models.PROTECT, related_name="lancamentos")
+
     TIPO_CHOICES = [("ENTRADA", "Entrada"), ("SAIDA", "Saída")]
     ORIGEM_CHOICES = [
         ("PROCEDIMENTO", "Procedimento"),
@@ -15,7 +17,6 @@ class LancamentoFinanceiro(models.Model):
     data = models.DateField()
     valor = models.DecimalField(max_digits=10, decimal_places=2, validators=[MinValueValidator(Decimal("0"))])
     descricao = models.CharField(max_length=255)
-
     categoria = models.CharField(max_length=100, blank=True)
 
     agendamento = models.ForeignKey("agenda.Agendamento", null=True, blank=True, on_delete=models.SET_NULL)

@@ -1,0 +1,78 @@
+
+/* =========================================================
+   AGENDA SEMANAL – PREMIUM: “Ver mais” por dia
+   - Mostra só alguns cards e exibe botão "+N (ver mais)"
+   - Ao expandir: habilita scroll no dia e mantém header sticky
+   ========================================================= */
+
+.day-col{
+  display:flex;
+  flex-direction:column;
+  position:relative;
+}
+
+/* Header sempre visível quando expandido */
+.day-head{
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: rgba(255,255,255,.78);
+  border-bottom: 1px solid rgba(30,20,60,.08);
+  padding-bottom: 10px;
+  margin-bottom: 10px;
+  backdrop-filter: blur(6px);
+}
+
+/* Padrão (colapsado): sem scroll; mostra poucos cards */
+.day-body{
+  overflow: visible;
+  max-height: none;
+}
+
+/* Expandido: vira lista rolável para não “explodir” a página */
+.day-col.is-expanded .day-body{
+  max-height: 56vh;
+  overflow: auto;
+  padding-right: 6px;
+  scroll-behavior: smooth;
+
+  scrollbar-width: thin;
+  scrollbar-color: rgba(120,60,200,.28) transparent;
+}
+.day-col.is-expanded .day-body::-webkit-scrollbar{ width: 8px; }
+.day-col.is-expanded .day-body::-webkit-scrollbar-track{ background: transparent; }
+.day-col.is-expanded .day-body::-webkit-scrollbar-thumb{
+  background: rgba(120,60,200,.22);
+  border-radius: 999px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+.day-col.is-expanded .day-body::-webkit-scrollbar-thumb:hover{
+  background: rgba(120,60,200,.32);
+}
+
+/* Cards ocultos no modo colapsado */
+.appt-hidden{
+  display:none !important;
+}
+
+/* Ações "ver mais" */
+.day-more{
+  margin-top: 10px;
+  display:flex;
+  justify-content:center;
+}
+.day-more button{
+  border-radius: 999px;
+  padding: 8px 12px;
+  font-weight: 900;
+  font-size: 12px;
+  border: 1px solid rgba(120,60,200,.22);
+  background: rgba(255,255,255,.86);
+  box-shadow: 0 10px 22px rgba(20,10,40,.08);
+}
+.day-more button:hover{
+  transform: translateY(-1px);
+  transition: transform .12s ease, box-shadow .12s ease;
+  box-shadow: 0 14px 30px rgba(20,10,40,.12);
+}

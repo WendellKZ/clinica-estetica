@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+{% block title %}Produtos | Sistema Clínica{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+  <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+    <div>
+      <h1 class="h3 mb-1">Produtos</h1>
+      <div class="text-muted">Cadastro de produtos usados na clínica (ex.: cosméticos, kits, itens de venda).</div>
+    </div>
+    <div class="d-flex gap-2">
+      <a class="btn btn-primary" href="{% url 'produtos_novo' %}">
+        <span class="me-1">+</span> Novo produto
+      </a>
+    </div>
+  </div>
+
+  <div class="card shadow-sm border-0">
+    <div class="card-body">
+      <form class="row g-2 mb-3" method="get">
+        <div class="col-sm-8 col-md-6">
+          <input class="form-control" type="text" name="q" value="{{ q }}" placeholder="Buscar por nome...">
+        </div>
+        <div class="col-auto">
+          <button class="btn btn-outline-primary" type="submit">Buscar</button>
+          {% if q %}<a class="btn btn-link" href="{% url 'produtos_lista' %}">limpar</a>{% endif %}
+        </div>
+      </form>
+
+      <div class="table-responsive">
+        <table class="table align-middle">
+          <thead>
+            <tr>
+              <th>Nome</th>
+              <th class="text-end">Preço</th>
+              <th class="text-center">Ativo</th>
+              <th class="text-end" style="width: 180px;">Ações</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for p in produtos %}
+            <tr>
+              <td>
+                <div class="fw-semibold">{{ p.nome }}</div>
+                {% if p.descricao %}<div class="text-muted small">{{ p.descricao|truncatechars:80 }}</div>{% endif %}
+              </td>
+              <td class="text-end">R$ {{ p.preco }}</td>
+              <td class="text-center">
+                {% if p.ativo %}
+                  <span class="badge text-bg-success">Sim</span>
+                {% else %}
+                  <span class="badge text-bg-secondary">Não</span>
+                {% endif %}
+              </td>
+              <td class="text-end">
+                <a class="btn btn-sm btn-outline-primary" href="{% url 'produtos_editar' p.id %}">Editar</a>
+                <a class="btn btn-sm btn-outline-danger" href="{% url 'produtos_excluir' p.id %}">Excluir</a>
+              </td>
+            </tr>
+            {% empty %}
+            <tr>
+              <td colspan="4" class="text-muted">Nenhum produto cadastrado.</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

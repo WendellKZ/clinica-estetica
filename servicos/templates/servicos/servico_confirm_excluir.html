@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block title %}Excluir serviço | Sistema Clínica{% endblock %}
+{% block content %}
+<div class="card shadow-sm border-0 rounded-3">
+  <div class="card-body">
+    <h3 class="mb-2">Excluir serviço</h3>
+    <p class="text-muted">Tem certeza que deseja excluir o serviço <b>{{ alvo.nome }}</b>?</p>
+    <form method="post" class="d-flex gap-2">
+      {% csrf_token %}
+      <button class="btn btn-danger" type="submit"><i class="bi bi-trash me-1"></i>Sim, excluir</button>
+      <a class="btn btn-outline-secondary" href="{% url 'servicos:servico_lista' %}">Cancelar</a>
+    </form>
+  </div>
+</div>
+{% endblock %}

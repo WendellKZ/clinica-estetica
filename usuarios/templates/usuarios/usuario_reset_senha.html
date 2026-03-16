@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+{% block title %}Resetar senha | Sistema Clínica{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <div>
+    <h2 class="mb-0">Alterar senha</h2>
+    <div class="text-muted">Usuário: <b>{{ alvo.username }}</b></div>
+  </div>
+  <a class="btn btn-outline-secondary" href="{% url 'usuarios:usuario_lista' %}"><i class="bi bi-arrow-left me-1"></i>Voltar</a>
+</div>
+
+<div class="card shadow-sm border-0 rounded-3">
+  <div class="card-body">
+    <form method="post" class="row g-3">
+      {% csrf_token %}
+      <div class="col-12 col-md-6">
+        <label class="form-label">{{ form.password.label }}</label>
+        {{ form.password }}
+        {% for e in form.password.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
+      </div>
+      <div class="col-12 col-md-6">
+        <label class="form-label">{{ form.password2.label }}</label>
+        {{ form.password2 }}
+        {% for e in form.password2.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
+      </div>
+      {% for e in form.non_field_errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
+      <div class="col-12 d-flex gap-2">
+        <button class="btn btn-primary" type="submit"><i class="bi bi-key me-1"></i>Salvar nova senha</button>
+        <a class="btn btn-outline-secondary" href="{% url 'usuarios:usuario_lista' %}">Cancelar</a>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

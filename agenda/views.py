@@ -1,229 +1,164 @@
+from __future__ import annotations
+
 from datetime import timedelta
-import itertools
+
+from django.apps import apps
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
-from django.contrib.auth import get_user_model
-from django.db.models import Q
+from django.forms import modelform_factory
+from django.http import Http404, JsonResponse, HttpResponseNotAllowed
 from django.shortcuts import get_object_or_404, redirect, render
+from django.urls import reverse
 from django.utils import timezone
-from django.views.decorators.http import require_POST
 
-from .models import Agendamento, Servico
-from .forms import AgendamentoForm
 
-def _is_in_group(user, name: str) -> bool:
+def _get_model(app_label: str, model_name: str):
     try:
-        return user.groups.filter(name=name).exists()
+        return apps.get_model(app_label, model_name)
     except Exception:
-        return False
+        return None
 
-def _can_view_all(user) -> bool:
-    return user.is_superuser or user.is_staff or _is_in_group(user, "Admin") or _is_in_group(user, "Recepcao")
 
-def _filter_qs_by_role(qs, user):
-    if _can_view_all(user):
-        return qs
-    if _is_in_group(user, "Profissional"):
-        return qs.filter(profissional=user)
-    return qs.filter(Q(profissional=user) | Q(profissional__isnull=True))
+def _get_form():
+    """Tenta usar o AgendamentoForm existente; se não existir, cria um ModelForm."""
+    try:
+        from .forms import AgendamentoForm  # type: ignore
+        return AgendamentoForm
+    except Exception:
+        Agendamento = _get_model("agenda", "Agendamento")
+        if not Agendamento:
+            raise Http404("Model Agendamento não encontrado.")
+        return modelform_factory(Agendamento, exclude=())
 
-def _get_week_range(ref_date):
-    monday = ref_date - timedelta(days=ref_date.weekday())
-    start = timezone.make_aware(timezone.datetime(monday.year, monday.month, monday.day, 0, 0, 0))
-    end = start + timedelta(days=7)
+
+def _week_bounds(base_date):
+    weekday = base_date.weekday()  # 0=Mon
+    start = base_date - timedelta(days=weekday)
+    end = start + timedelta(days=6)
     return start, end
 
-def _has_conflict(profissional, inicio, fim, exclude_pk=None):
-    if not profissional or not inicio or not fim:
-        return False
-    qs = Agendamento.objects.filter(profissional=profissional, inicio__lt=fim, fim__gt=inicio)
-    if exclude_pk:
-        qs = qs.exclude(pk=exclude_pk)
-    return qs.exists()
-
-def _build_prof_color_map(users):
-    palette = [
-        "#b14bbf", "#6b2b7a", "#ff7aa2", "#f4a3b8",
-        "#4c78a8", "#72b7b2", "#54a24b", "#eeca3b",
-        "#f58518", "#b279a2", "#9d755d", "#bab0ac",
-    ]
-    colors = {}
-    cyc = itertools.cycle(palette)
-    for u in users:
-        if u and u.id not in colors:
-            colors[u.id] = next(cyc)
-    return colors
-
-def _apply_colors(agendamentos, prof_colors):
-    for a in agendamentos:
-        try:
-            a.prof_color = prof_colors.get(a.profissional_id) or "#d0d0d0"
-        except Exception:
-            a.prof_color = "#d0d0d0"
-    return agendamentos
 
 @login_required
 def agenda_semana(request):
-    today = timezone.localdate()
-    start, end = _get_week_range(today)
-
-    prof_id = request.GET.get("prof") or ""
-    qs = Agendamento.objects.select_related("cliente", "servico", "profissional").filter(
-        inicio__gte=start, inicio__lt=end
-    ).order_by("inicio")
-    qs = _filter_qs_by_role(qs, request.user)
-    if prof_id:
-        qs = qs.filter(profissional_id=prof_id)
-
-    User = get_user_model()
-    profissionais = User.objects.filter(is_active=True).order_by("username")
-    if not _can_view_all(request.user):
-        profissionais = profissionais.filter(id=request.user.id)
-
-    prof_colors = _build_prof_color_map(profissionais)
-    ags = _apply_colors(list(qs), prof_colors)
-
-    return render(request, "agenda/agenda.html", {
-        "agendamentos": ags,
-        "week_start": start,
-        "week_end": end,
-        "profissionais": profissionais,
-        "prof_id": str(prof_id),
-        "view_mode": "semana",
-    })
-
-@login_required
-def agenda_dia(request):
-    dia_str = request.GET.get("dia")
+    """Agenda semanal em cards — sempre mostra os 7 dias."""
     try:
-        if dia_str:
-            dia = timezone.datetime.fromisoformat(dia_str).date()
-        else:
-            dia = timezone.localdate()
+        offset = int(request.GET.get("offset", "0"))
     except Exception:
-        dia = timezone.localdate()
+        offset = 0
 
-    start = timezone.make_aware(timezone.datetime(dia.year, dia.month, dia.day, 0, 0, 0))
-    end = start + timedelta(days=1)
+    today = timezone.localdate()
+    base = today + timedelta(weeks=offset)
+    semana_inicio, semana_fim = _week_bounds(base)
 
-    prof_id = request.GET.get("prof") or ""
-    qs = Agendamento.objects.select_related("cliente", "servico", "profissional").filter(
-        inicio__gte=start, inicio__lt=end
-    ).order_by("inicio")
-    qs = _filter_qs_by_role(qs, request.user)
-    if prof_id:
-        qs = qs.filter(profissional_id=prof_id)
+    Agendamento = _get_model("agenda", "Agendamento")
+    ags = []
+    if Agendamento:
+        qs = Agendamento.objects.all()
+        if hasattr(Agendamento, "inicio"):
+            start_dt = timezone.make_aware(
+                timezone.datetime.combine(semana_inicio, timezone.datetime.min.time())
+            )
+            end_dt = timezone.make_aware(
+                timezone.datetime.combine(semana_fim, timezone.datetime.max.time())
+            )
+            qs = qs.filter(inicio__range=(start_dt, end_dt)).order_by("inicio")
+        elif hasattr(Agendamento, "data"):
+            qs = qs.filter(data__range=(semana_inicio, semana_fim)).order_by("data")
+        ags = list(qs)
 
-    User = get_user_model()
-    profissionais = User.objects.filter(is_active=True).order_by("username")
-    if not _can_view_all(request.user):
-        profissionais = profissionais.filter(id=request.user.id)
+    by_day = {}
+    for a in ags:
+        if hasattr(a, "inicio") and getattr(a, "inicio", None):
+            d = timezone.localtime(a.inicio).date()
+        elif hasattr(a, "data") and getattr(a, "data", None):
+            d = a.data
+        else:
+            continue
+        by_day.setdefault(d, []).append(a)
 
-    prof_colors = _build_prof_color_map(profissionais)
-    ags = _apply_colors(list(qs), prof_colors)
+    dias = []
+    for i in range(7):
+        d = semana_inicio + timedelta(days=i)
+        dias.append({"grouper": d, "list": by_day.get(d, [])})
 
-    return render(request, "agenda/dia.html", {
-        "agendamentos": ags,
-        "dia": dia,
-        "profissionais": profissionais,
-        "prof_id": str(prof_id),
-        "view_mode": "dia",
-    })
+    return render(
+        request,
+        "agenda/agenda.html",
+        {
+            "dias": dias,
+            "semana_inicio": semana_inicio,
+            "semana_fim": semana_fim,
+            "offset": offset,
+        },
+    )
+
+
+# alias compatível com versões anteriores
+agenda_lista = agenda_semana
+
 
 @login_required
-def agendamento_novo(request):
-    now = timezone.localtime()
-    minute = (now.minute // 15 + 1) * 15
-    start = now.replace(minute=0, second=0, microsecond=0) + timedelta(minutes=minute)
-    end = start + timedelta(hours=1)
+def agenda_novo(request):
+    """Cria um novo agendamento (compatível com urls.py)."""
+    Form = _get_form()
+    if request.method == "POST":
+        form = Form(request.POST)
+        if form.is_valid():
+            form.save()
+            messages.success(request, "Agendamento criado com sucesso.")
+            return redirect(reverse("agenda:agenda_lista"))
+        messages.error(request, "Revise os campos do agendamento.")
+    else:
+        initial = {}
+        now = timezone.localtime()
+        if hasattr(Form, "base_fields"):
+            if "inicio" in Form.base_fields:
+                initial["inicio"] = now.replace(second=0, microsecond=0)
+            if "fim" in Form.base_fields:
+                initial["fim"] = (now + timedelta(minutes=60)).replace(second=0, microsecond=0)
+        form = Form(initial=initial)
 
-    initial = {"inicio": start, "fim": end, "status": "AGENDADO", "duracao_min":"60"}
+    return render(request, "agenda/agenda_form.html", {"form": form, "titulo": "Novo agendamento"})
 
-    servicos_duracoes = {}
-    for s in Servico.objects.all().only("id"):
-        dur = getattr(s, "duracao_minutos", None)
-        if dur is None:
-            dur = getattr(s, "duracao_padrao_min", None)
-        if dur is None:
-            dur = 60
-        try:
-            servicos_duracoes[str(s.id)] = int(dur)
-        except Exception:
-            servicos_duracoes[str(s.id)] = 60
+
+@login_required
+def agenda_editar(request, pk: int):
+    Agendamento = _get_model("agenda", "Agendamento")
+    if not Agendamento:
+        raise Http404("Model Agendamento não encontrado.")
+    obj = get_object_or_404(Agendamento, pk=pk)
+    Form = _get_form()
 
     if request.method == "POST":
-        form = AgendamentoForm(request.POST)
+        form = Form(request.POST, instance=obj)
         if form.is_valid():
-            ag = form.save(commit=False)
-            ag.cliente = form.get_or_create_cliente()
-
-            action = request.POST.get("action", "")
-            if action == "confirmar":
-                ag.status = "CONFIRMADO"
-
-            if _is_in_group(request.user, "Profissional") and not _can_view_all(request.user):
-                ag.profissional = request.user
-
-            if _has_conflict(ag.profissional, ag.inicio, ag.fim):
-                messages.error(request, "Conflito de horário: este profissional já possui um agendamento nesse período.")
-                return render(request, "agenda/novo.html", {
-                    "form": form,
-                    "is_profissional": _is_in_group(request.user, "Profissional") and not _can_view_all(request.user),
-                    "servicos_duracoes": servicos_duracoes,
-                })
-
-            ag.save()
-            messages.success(
-                request,
-                "Agendamento criado e confirmado com sucesso." if ag.status == "CONFIRMADO" else "Agendamento criado com sucesso."
-            )
-            return redirect("agenda_lista")
+            form.save()
+            messages.success(request, "Agendamento atualizado.")
+            return redirect(reverse("agenda:agenda_lista"))
+        messages.error(request, "Revise os campos do agendamento.")
     else:
-        form = AgendamentoForm(initial=initial)
-        if _is_in_group(request.user, "Profissional") and not _can_view_all(request.user):
-            form.fields["profissional"].required = False
+        form = Form(instance=obj)
 
-    return render(request, "agenda/novo.html", {
-        "form": form,
-        "is_profissional": _is_in_group(request.user, "Profissional") and not _can_view_all(request.user),
-        "servicos_duracoes": servicos_duracoes,
-    })
+    return render(request, "agenda/agenda_form.html", {"form": form, "titulo": "Editar agendamento", "obj": obj})
+
 
 @login_required
-@require_POST
-def agendamento_mudar_status(request, pk, status):
-    ag = get_object_or_404(Agendamento.objects.select_related("cliente", "servico", "profissional"), pk=pk)
-    if not _can_view_all(request.user) and ag.profissional_id and ag.profissional_id != request.user.id:
-        messages.error(request, "Você não tem permissão para alterar este agendamento.")
-        return redirect("agenda_lista")
+def agenda_status(request, pk: int):
+    """Atualiza status via POST (compatível)."""
+    if request.method not in ("POST", "PATCH"):
+        return HttpResponseNotAllowed(["POST", "PATCH"])
 
-    status = (status or "").upper()
-    allowed = {"AGENDADO", "CONFIRMADO", "REALIZADO", "CANCELADO"}
-    if status not in allowed:
-        messages.error(request, "Status inválido.")
-        return redirect("agenda_lista")
+    Agendamento = _get_model("agenda", "Agendamento")
+    if not Agendamento:
+        raise Http404("Model Agendamento não encontrado.")
+    obj = get_object_or_404(Agendamento, pk=pk)
 
-    ag.status = status
-    ag.save(update_fields=["status"])
+    new_status = request.POST.get("status") or request.GET.get("status")
+    if not new_status:
+        return JsonResponse({"ok": False, "error": "status ausente"}, status=400)
 
-    if status == "REALIZADO":
-        from loja.models import Venda
-        key = f"agendamento #{ag.id}"
-        venda = Venda.objects.filter(cliente=ag.cliente, observacao__icontains=key).order_by("-id").first()
-        if not venda:
-            field = Venda._meta.get_field("forma_pagamento")
-            default_forma = field.choices[0][0] if getattr(field, "choices", None) else "PIX"
-            venda = Venda.objects.create(
-                cliente=ag.cliente,
-                forma_pagamento=default_forma,
-                observacao=f"Gerado do agendamento #{ag.id} - {getattr(ag.servico, 'nome', ag.servico)}",
-                total=0,
-                custo_total=0,
-            )
-            messages.success(request, f"Atendimento marcado como realizado. Venda criada (#{venda.id}). Adicione os itens e finalize.")
-        else:
-            messages.info(request, f"Atendimento realizado. Venda já existente (#{venda.id}).")
-        return redirect("venda_detalhe", pk=venda.pk)
-
-    messages.success(request, f"Status atualizado para: {status.title()}.")
-    return redirect("agenda_lista")
+    if hasattr(obj, "status"):
+        setattr(obj, "status", new_status)
+        obj.save(update_fields=["status"])
+        return JsonResponse({"ok": True, "status": getattr(obj, "status")})
+    return JsonResponse({"ok": False, "error": "campo status não existe"}, status=400)
