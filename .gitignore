@@ -1,0 +1,13 @@
+.env
+.venv/
+__pycache__/
+*.py[cod]
+staticfiles/
+
+# Local database and developer artifacts
+db.sqlite3
+debug_curl.html
+projects.json
+projects_utf8.json
+servers.json
+servers_utf8.json
