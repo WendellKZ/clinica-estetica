@@ -1,8 +1,11 @@
 from pathlib import Path
+from io import StringIO
+from unittest.mock import patch
 
 from django.contrib.messages.storage.fallback import FallbackStorage
 from django.contrib.auth import get_user_model
 from django.conf import settings
+from django.core.management import call_command
 from django.test import Client, RequestFactory, SimpleTestCase, TestCase
 from django.urls import reverse
 from django.utils import timezone
@@ -30,6 +33,29 @@ class DeploymentConfigurationTests(SimpleTestCase):
         middleware = "django.contrib.auth.middleware.AuthenticationMiddleware"
 
         self.assertEqual(settings.MIDDLEWARE.count(middleware), 1)
+
+
+class BootstrapAdminCommandTests(TestCase):
+    @patch.dict(
+        "os.environ",
+        {
+            "INITIAL_ADMIN_USERNAME": "admin_teste",
+            "INITIAL_ADMIN_EMAIL": "admin@teste.com",
+            "INITIAL_ADMIN_PASSWORD": "SenhaTemporaria#7284",
+        },
+    )
+    def test_creates_superuser_from_environment_only_once(self):
+        output = StringIO()
+
+        call_command("bootstrap_admin", stdout=output)
+        call_command("bootstrap_admin", stdout=output)
+
+        users = get_user_model().objects.filter(username="admin_teste")
+        self.assertEqual(users.count(), 1)
+        user = users.get()
+        self.assertTrue(user.is_superuser)
+        self.assertTrue(user.is_staff)
+        self.assertTrue(user.check_password("SenhaTemporaria#7284"))
 
 
 class PermissionsModuleTests(SimpleTestCase):
