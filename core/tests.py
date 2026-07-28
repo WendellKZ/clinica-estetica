@@ -1,0 +1,303 @@
+from pathlib import Path
+
+from django.contrib.messages.storage.fallback import FallbackStorage
+from django.contrib.auth import get_user_model
+from django.conf import settings
+from django.test import Client, RequestFactory, SimpleTestCase, TestCase
+from django.urls import reverse
+from django.utils import timezone
+
+
+class HealthCheckTests(SimpleTestCase):
+    def test_health_endpoint_is_public_and_reports_ok(self):
+        response = Client().get("/health/")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json(), {"status": "ok"})
+
+
+class DeploymentConfigurationTests(SimpleTestCase):
+    def test_render_uses_dedicated_health_check_and_https_security(self):
+        render_config = (
+            Path(__file__).resolve().parents[1] / "render.yaml"
+        ).read_text(encoding="utf-8")
+
+        self.assertIn("healthCheckPath: /health/", render_config)
+        self.assertIn("key: SECURE_SSL_REDIRECT", render_config)
+        self.assertIn("key: SECURE_HSTS_SECONDS", render_config)
+
+    def test_authentication_middleware_is_not_registered_twice(self):
+        middleware = "django.contrib.auth.middleware.AuthenticationMiddleware"
+
+        self.assertEqual(settings.MIDDLEWARE.count(middleware), 1)
+
+
+class PermissionsModuleTests(SimpleTestCase):
+    def test_deny_redirects_to_default_route(self):
+        from core.permissions import deny
+
+        request = RequestFactory().get("/")
+        request.session = {}
+        request._messages = FallbackStorage(request)
+
+        response = deny(request)
+
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response.url, "/agenda/")
+
+
+class AuthenticationAndAuthorizationTests(TestCase):
+    def test_anonymous_user_is_redirected_from_business_pages(self):
+        protected_urls = [
+            reverse("dashboard"),
+            reverse("clientes_lista"),
+            reverse("agenda:agenda_lista"),
+            reverse("loja:venda_nova"),
+            reverse("financeiro_lista"),
+            reverse("usuarios:usuario_lista"),
+        ]
+
+        for url in protected_urls:
+            with self.subTest(url=url):
+                response = self.client.get(url)
+                self.assertEqual(response.status_code, 302)
+                self.assertIn("/login/", response.url)
+
+    def test_non_admin_cannot_access_user_management(self):
+        user = get_user_model().objects.create_user(
+            username="profissional", password="senha-forte-123"
+        )
+        self.client.force_login(user)
+
+        response = self.client.get(reverse("usuarios:usuario_lista"))
+
+        self.assertEqual(response.status_code, 302)
+        self.assertIn("/login/", response.url)
+
+
+class EmpresasModuleTests(TestCase):
+    def test_empresas_helpers_import_and_create_default_empresa(self):
+        from empresas.context_processors import empresa_context
+        from empresas.models import Empresa
+        from empresas.utils import ensure_default_empresa
+
+        empresa = ensure_default_empresa()
+
+        self.assertEqual(Empresa.objects.count(), 1)
+        self.assertEqual(empresa.nome, "Minha Clinica")
+
+        request = RequestFactory().get("/")
+        request.session = {}
+        context = empresa_context(request)
+        self.assertEqual(context["current_empresa"], empresa)
+
+
+class MainFlowSmokeTests(TestCase):
+    def setUp(self):
+        self.client = Client()
+        self.user = get_user_model().objects.create_user(
+            username="codex",
+            password="senha-forte-123",
+            is_staff=True,
+            is_superuser=True,
+        )
+        self.client.force_login(self.user)
+
+    def test_authenticated_main_pages_render(self):
+        from clientes.models import Cliente
+        from loja.models import Produto
+
+        cliente = Cliente.objects.create(nome="Cliente Smoke", telefone="11999999999")
+        produto = Produto.objects.create(
+            nome="Produto Smoke",
+            sku="SMK",
+            custo="10.00",
+            preco_venda="25.00",
+            estoque_atual=5,
+            ativo=True,
+        )
+
+        pages = [
+            "/",
+            reverse("clientes_lista"),
+            reverse("clientes_novo"),
+            reverse("agenda:agenda_lista"),
+            reverse("agenda:agenda_novo"),
+            reverse("loja:venda_nova"),
+            reverse("loja:produtos_lista"),
+            reverse("loja:produto_json", args=[produto.pk]),
+            reverse("financeiro_lista"),
+            reverse("financeiro_novo"),
+            reverse("servicos:servico_lista"),
+            reverse("servicos:servico_novo"),
+            reverse("produtos:produto_list"),
+            reverse("produtos:produto_create"),
+            reverse("usuarios:usuario_lista"),
+            reverse("clientes_editar", args=[cliente.pk]),
+        ]
+
+        for url in pages:
+            with self.subTest(url=url):
+                response = self.client.get(url)
+                self.assertEqual(response.status_code, 200)
+
+    def test_cliente_agenda_venda_financeiro_flow_executes(self):
+        from agenda.models import Agendamento, Servico
+        from clientes.models import Cliente
+        from financeiro.models import LancamentoFinanceiro
+        from loja.models import Produto, Venda
+
+        response = self.client.post(
+            reverse("clientes_novo"),
+            {
+                "nome": "Maria Smoke",
+                "telefone": "11988887777",
+                "email": "maria@example.com",
+                "observacoes": "Teste automatizado",
+            },
+        )
+        self.assertEqual(response.status_code, 302)
+        cliente = Cliente.objects.get(nome="Maria Smoke")
+
+        servico = Servico.objects.create(nome="Limpeza de pele", preco="120.00", duracao_minutos=60)
+        inicio = timezone.localtime() + timezone.timedelta(days=1)
+        fim = inicio + timezone.timedelta(hours=1)
+        response = self.client.post(
+            reverse("agenda:agenda_novo"),
+            {
+                "cliente": cliente.pk,
+                "profissional": self.user.pk,
+                "servico": servico.pk,
+                "inicio": inicio.strftime("%Y-%m-%dT%H:%M"),
+                "fim": fim.strftime("%Y-%m-%dT%H:%M"),
+                "status": "MARCADO",
+                "observacoes": "Criado no smoke test",
+                "duracao_min": "60",
+            },
+        )
+        self.assertEqual(response.status_code, 302)
+        self.assertTrue(Agendamento.objects.filter(cliente=cliente, servico=servico).exists())
+
+        produto = Produto.objects.create(
+            nome="Creme Smoke",
+            custo="8.00",
+            preco_venda="20.00",
+            estoque_atual=3,
+            ativo=True,
+        )
+        response = self.client.post(
+            reverse("loja:venda_nova"),
+            {
+                "cliente": cliente.pk,
+                "forma_pagamento": "PIX",
+                "observacao": "Venda smoke",
+            },
+        )
+        self.assertEqual(response.status_code, 302)
+        venda = Venda.objects.latest("id")
+
+        response = self.client.post(
+            reverse("loja:venda_detalhe", args=[venda.pk]),
+            {
+                "add_item": "1",
+                "produto": produto.pk,
+                "quantidade": "2",
+            },
+        )
+        self.assertEqual(response.status_code, 302)
+
+        response = self.client.post(reverse("loja:venda_finalizar", args=[venda.pk]))
+        self.assertEqual(response.status_code, 302)
+        produto.refresh_from_db()
+        venda.refresh_from_db()
+        self.assertEqual(produto.estoque_atual, 1)
+        self.assertEqual(venda.total, 40)
+        self.assertTrue(LancamentoFinanceiro.objects.filter(venda=venda, valor=40).exists())
+
+    def test_finalizing_same_sale_twice_does_not_deduct_stock_twice(self):
+        from financeiro.models import LancamentoFinanceiro
+        from loja.models import Produto, Venda, VendaItem
+
+        produto = Produto.objects.create(
+            nome="Produto idempotente",
+            custo="5.00",
+            preco_venda="15.00",
+            estoque_atual=5,
+            ativo=True,
+        )
+        produto.refresh_from_db()
+        venda = Venda.objects.create(forma_pagamento="PIX")
+        VendaItem.objects.create(
+            venda=venda,
+            produto=produto,
+            quantidade=2,
+            preco_unitario=produto.preco_venda,
+            custo_unitario=produto.custo,
+        )
+
+        url = reverse("loja:venda_finalizar", args=[venda.pk])
+        self.client.post(url)
+        self.client.post(url)
+
+        produto.refresh_from_db()
+        self.assertEqual(produto.estoque_atual, 3)
+        self.assertEqual(LancamentoFinanceiro.objects.filter(venda=venda).count(), 1)
+
+    def test_agenda_status_rejects_value_outside_model_choices(self):
+        from agenda.models import Agendamento, Servico
+        from clientes.models import Cliente
+
+        cliente = Cliente.objects.create(nome="Cliente status")
+        servico = Servico.objects.create(
+            nome="Serviço status", preco="50.00", duracao_minutos=30
+        )
+        inicio = timezone.now() + timezone.timedelta(days=1)
+        agendamento = Agendamento.objects.create(
+            cliente=cliente,
+            profissional=self.user,
+            servico=servico,
+            inicio=inicio,
+            fim=inicio + timezone.timedelta(minutes=30),
+        )
+
+        response = self.client.post(
+            f"/agenda/{agendamento.pk}/status/INVENTADO/",
+        )
+
+        agendamento.refresh_from_db()
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(agendamento.status, "MARCADO")
+
+    def test_marking_appointment_realized_creates_attendance_and_finance_once(self):
+        from agenda.models import Agendamento, Atendimento, Servico
+        from clientes.models import Cliente
+        from financeiro.models import LancamentoFinanceiro
+
+        cliente = Cliente.objects.create(nome="Cliente realizado")
+        servico = Servico.objects.create(
+            nome="Procedimento realizado", preco="90.00", duracao_minutos=45
+        )
+        inicio = timezone.now()
+        agendamento = Agendamento.objects.create(
+            cliente=cliente,
+            profissional=self.user,
+            servico=servico,
+            inicio=inicio,
+            fim=inicio + timezone.timedelta(minutes=45),
+        )
+        url = f"/agenda/{agendamento.pk}/status/REALIZADO/"
+
+        first_response = self.client.post(url)
+        second_response = self.client.post(url)
+
+        self.assertEqual(first_response.status_code, 200)
+        self.assertEqual(second_response.status_code, 200)
+        self.assertEqual(Atendimento.objects.filter(agendamento=agendamento).count(), 1)
+        self.assertEqual(
+            LancamentoFinanceiro.objects.filter(
+                agendamento=agendamento,
+                origem="PROCEDIMENTO",
+                tipo="ENTRADA",
+            ).count(),
+            1,
+        )

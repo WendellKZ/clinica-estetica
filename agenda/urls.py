@@ -15,6 +15,7 @@ urlpatterns = [
 
     # editar
     path("<int:pk>/editar/", views.agenda_editar, name="agenda_editar"),
+    path("<int:pk>/status/<str:status>/", views.agenda_status, name="agenda_status"),
 
     # navegação semanal por offset (aceita valores negativos: -1, 1, etc.)
     # Mantemos o MESMO name para permitir reverse com/sem parâmetro.

@@ -114,3 +114,8 @@ def login_view(request):
         django_engine = engines['django']
         template = django_engine.from_string(html)
         return HttpResponse(template.render({}, request))
+from django.http import JsonResponse
+
+
+def health(request):
+    return JsonResponse({"status": "ok"})

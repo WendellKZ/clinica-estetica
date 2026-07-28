@@ -5,6 +5,7 @@ from datetime import timedelta
 from django.apps import apps
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
+from django.db import transaction
 from django.forms import modelform_factory
 from django.http import Http404, JsonResponse, HttpResponseNotAllowed
 from django.shortcuts import get_object_or_404, redirect, render
@@ -143,7 +144,8 @@ def agenda_editar(request, pk: int):
 
 
 @login_required
-def agenda_status(request, pk: int):
+@transaction.atomic
+def agenda_status(request, pk: int, status: str | None = None):
     """Atualiza status via POST (compatível)."""
     if request.method not in ("POST", "PATCH"):
         return HttpResponseNotAllowed(["POST", "PATCH"])
@@ -153,12 +155,24 @@ def agenda_status(request, pk: int):
         raise Http404("Model Agendamento não encontrado.")
     obj = get_object_or_404(Agendamento, pk=pk)
 
-    new_status = request.POST.get("status") or request.GET.get("status")
+    new_status = status or request.POST.get("status") or request.GET.get("status")
     if not new_status:
         return JsonResponse({"ok": False, "error": "status ausente"}, status=400)
 
     if hasattr(obj, "status"):
+        valid_statuses = {value for value, _label in obj.STATUS_CHOICES}
+        if new_status not in valid_statuses:
+            return JsonResponse({"ok": False, "error": "status inválido"}, status=400)
         setattr(obj, "status", new_status)
         obj.save(update_fields=["status"])
+        if new_status == "REALIZADO":
+            Atendimento = _get_model("agenda", "Atendimento")
+            if Atendimento:
+                Atendimento.objects.get_or_create(
+                    agendamento=obj, defaults={"observacoes": ""}
+                )
+            from financeiro.services import criar_entrada_procedimento
+
+            criar_entrada_procedimento(obj)
         return JsonResponse({"ok": True, "status": getattr(obj, "status")})
     return JsonResponse({"ok": False, "error": "campo status não existe"}, status=400)

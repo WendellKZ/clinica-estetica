@@ -8,6 +8,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 from ..models import Produto, Venda, VendaItem
 from ..forms import ProdutoForm, VendaForm, AddItemForm
 from clientes.models import Cliente
+from financeiro.models import LancamentoFinanceiro
 from financeiro.services import criar_entrada_venda
 
 
@@ -148,10 +149,16 @@ def venda_detalhe(request, pk):
 @login_required
 @transaction.atomic
 def venda_finalizar(request, pk):
-    venda = get_object_or_404(Venda, pk=pk)
+    venda = get_object_or_404(Venda.objects.select_for_update(), pk=pk)
 
     if venda.itens.count() == 0:
         messages.error(request, "Adicione ao menos 1 item antes de finalizar.")
+        return redirect("loja:venda_detalhe", pk=venda.pk)
+
+    if LancamentoFinanceiro.objects.filter(
+        tipo="ENTRADA", origem="VENDA", venda=venda
+    ).exists():
+        messages.info(request, "Esta venda já foi finalizada.")
         return redirect("loja:venda_detalhe", pk=venda.pk)
 
     for item in venda.itens.select_related("produto").all():
