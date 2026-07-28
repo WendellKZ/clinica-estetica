@@ -34,6 +34,16 @@ class DeploymentConfigurationTests(SimpleTestCase):
 
         self.assertEqual(settings.MIDDLEWARE.count(middleware), 1)
 
+    def test_whitenoise_serves_collected_static_files_in_production(self):
+        security = settings.MIDDLEWARE.index(
+            "django.middleware.security.SecurityMiddleware"
+        )
+        whitenoise = settings.MIDDLEWARE.index(
+            "whitenoise.middleware.WhiteNoiseMiddleware"
+        )
+
+        self.assertEqual(whitenoise, security + 1)
+
 
 class BootstrapAdminCommandTests(TestCase):
     @patch.dict(
