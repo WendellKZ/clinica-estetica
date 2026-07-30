@@ -495,3 +495,57 @@ class GuidedAppointmentTests(TestCase):
         self.assertContains(response, "4. Conferir")
         self.assertContains(response, 'class="top-header-title"')
         self.assertContains(response, "Novo agendamento")
+
+
+class ServiceSynchronizationTests(TestCase):
+    def setUp(self):
+        self.user = get_user_model().objects.create_superuser(
+            username="service_admin",
+            password="senha-forte-123",
+            email="admin@example.com",
+        )
+        self.client.force_login(self.user)
+
+    def test_panel_service_is_mapped_and_available_in_appointment(self):
+        from agenda.models import Servico as AgendaServico
+        from servicos.models import Servico as PainelServico
+
+        PainelServico.objects.create(
+            nome="Depilação íntima",
+            duracao_min=60,
+            preco_padrao="50.00",
+            custo_padrao="10.00",
+            ativo=True,
+        )
+
+        synced = AgendaServico.objects.get(nome="Depilação íntima")
+        self.assertEqual(synced.duracao_minutos, 60)
+        self.assertEqual(str(synced.preco), "50.00")
+        self.assertTrue(synced.ativo)
+
+        response = self.client.get(reverse("agenda:agenda_novo"))
+        self.assertContains(response, "Depilação íntima")
+
+    def test_service_updates_and_inactive_service_is_hidden(self):
+        from agenda.models import Servico as AgendaServico
+        from servicos.models import Servico as PainelServico
+
+        service = PainelServico.objects.create(
+            nome="Meia perna",
+            duracao_min=45,
+            preco_padrao="30.00",
+            custo_padrao="5.00",
+            ativo=True,
+        )
+        service.duracao_min = 75
+        service.preco_padrao = "42.00"
+        service.ativo = False
+        service.save()
+
+        synced = AgendaServico.objects.get(nome="Meia perna")
+        self.assertEqual(synced.duracao_minutos, 75)
+        self.assertEqual(str(synced.preco), "42.00")
+        self.assertFalse(synced.ativo)
+
+        response = self.client.get(reverse("agenda:agenda_novo"))
+        self.assertNotContains(response, "Meia perna")

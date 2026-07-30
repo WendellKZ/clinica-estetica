@@ -1,6 +1,7 @@
 from datetime import timedelta
 
 from django import forms
+from django.db.models import Q
 from django.utils import timezone
 
 from .models import Agendamento
@@ -38,6 +39,18 @@ class AgendamentoForm(forms.ModelForm):
             "fim": forms.DateTimeInput(format="%Y-%m-%dT%H:%M", attrs={"type": "datetime-local"}),
             "observacoes": forms.Textarea(attrs={"rows": 3}),
         }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["servico"].queryset = (
+            self.fields["servico"].queryset.filter(ativo=True).order_by("nome")
+        )
+        if self.instance and getattr(self.instance, "servico_id", None):
+            self.fields["servico"].queryset = (
+                self.fields["servico"].queryset.model.objects.filter(
+                    Q(ativo=True) | Q(pk=self.instance.servico_id)
+                ).order_by("nome")
+            )
 
     def clean(self):
         cleaned = super().clean()
