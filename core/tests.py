@@ -19,6 +19,16 @@ class HealthCheckTests(SimpleTestCase):
         self.assertEqual(response.json(), {"status": "ok"})
 
 
+class BrandIdentityTests(TestCase):
+    def test_login_uses_elisangela_brand_image(self):
+        response = self.client.get(reverse("login"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "logo-elisangela-identidade.png")
+        self.assertContains(response, "Elisângela Barbosa Estética")
+        self.assertNotContains(response, "Sistema Clínica")
+
+
 class DeploymentConfigurationTests(SimpleTestCase):
     def test_render_uses_dedicated_health_check_and_https_security(self):
         render_config = (
@@ -337,3 +347,59 @@ class MainFlowSmokeTests(TestCase):
             ).count(),
             1,
         )
+
+
+class DashboardWeeklyAgendaTests(TestCase):
+    def setUp(self):
+        self.client = Client()
+        self.user = get_user_model().objects.create_user(
+            username="agenda_admin",
+            password="senha-forte-123",
+            is_staff=True,
+            is_superuser=True,
+        )
+        self.client.force_login(self.user)
+
+    def test_dashboard_groups_only_current_week_days_with_appointments(self):
+        from agenda.models import Agendamento, Servico
+        from clientes.models import Cliente
+
+        today = timezone.localdate()
+        monday = today - timezone.timedelta(days=today.weekday())
+        cliente = Cliente.objects.create(nome="Cliente da semana")
+        servico = Servico.objects.create(
+            nome="Limpeza facial", preco="100.00", duracao_minutos=60
+        )
+
+        first_day = monday + timezone.timedelta(days=1)
+        second_day = monday + timezone.timedelta(days=3)
+        next_week = monday + timezone.timedelta(days=8)
+
+        for appointment_day in (first_day, second_day, next_week):
+            inicio = timezone.make_aware(
+                timezone.datetime.combine(
+                    appointment_day, timezone.datetime.min.time()
+                ).replace(hour=10)
+            )
+            Agendamento.objects.create(
+                cliente=cliente,
+                profissional=self.user,
+                servico=servico,
+                inicio=inicio,
+                fim=inicio + timezone.timedelta(hours=1),
+                status="MARCADO",
+            )
+
+        response = self.client.get(reverse("dashboard"))
+
+        groups = response.context["agenda_semana_dias"]
+        self.assertEqual([group["data"] for group in groups], [first_day, second_day])
+        self.assertTrue(all(group["agendamentos"] for group in groups))
+        self.assertContains(response, "Agenda da semana")
+        self.assertContains(response, "Cliente da semana", count=2)
+
+    def test_dashboard_shows_empty_week_message(self):
+        response = self.client.get(reverse("dashboard"))
+
+        self.assertEqual(response.context["agenda_semana_dias"], [])
+        self.assertContains(response, "Nenhum agendamento nesta semana")

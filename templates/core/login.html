@@ -1,17 +1,20 @@
 {% extends "base_auth.html" %}
 {% load static %}
-{% block title %}Entrar | Sistema Clínica{% endblock %}
+{% block title %}Entrar | Elisângela Barbosa Estética{% endblock %}
 
 {% block content %}
-<div class="row justify-content-center">
-  <div class="col-12 col-sm-10 col-md-8 col-lg-5 col-xl-4">
+<div class="auth-login-layout">
+  <section class="auth-brand-panel" aria-label="Elisângela Barbosa Estética">
+    <img src="{% static 'img/logo-elisangela-identidade.png' %}" alt="Elisângela Barbosa Estética">
+  </section>
+
+  <section class="auth-form-panel">
     <div class="text-center mb-4">
-      <img src="{% static 'img/logo-elisangela.png' %}" alt="Logo Elisângela Barbosa Estética" style="width: 240px; max-width: 92%; object-fit: contain; margin-bottom: 1rem;">
-      <h1 class="auth-title mb-1" style="color:#6b2b7a; font-weight:800; font-size: 1.75rem;">Bem-vindo(a)</h1>
+      <h1 class="auth-title mb-1">Bem-vindo(a)</h1>
       <p class="auth-subtitle mb-0">Acesse para gerenciar agenda, vendas e financeiro.</p>
     </div>
 
-    <div class="card auth-card shadow-sm border-0" style="border-radius: 12px; background: rgba(255, 255, 255, 0.95);">
+    <div class="card auth-card shadow-sm border-0">
       <div class="card-body p-4 p-md-5">
         {% if error %}
           <div class="alert alert-danger d-flex align-items-center gap-2" role="alert">
@@ -75,7 +78,7 @@
             </div>
           </div>
 
-          <button class="btn btn-primary btn-lg w-100 auth-btn mt-2" type="submit" style="background-color: #0d6efd; border: none; border-radius: 8px; font-weight: 600;">
+          <button class="btn btn-primary btn-lg w-100 auth-btn mt-2" type="submit">
             <i class="bi bi-heart-fill me-2"></i>Entrar
           </button>
         </form>
@@ -85,7 +88,7 @@
         </div>
       </div>
     </div>
-  </div>
+  </section>
 </div>
 {% endblock %}
 

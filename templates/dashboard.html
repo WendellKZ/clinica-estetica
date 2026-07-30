@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}Visão Geral | Sistema Clínica{% endblock %}
+{% block title %}Visão Geral | Elisângela Barbosa Estética{% endblock %}
 
 {% block header_title %}Visão Geral{% endblock %}
 
@@ -70,6 +70,52 @@
     </div>
   </div>
 </div>
+
+<section class="weekly-agenda mb-4" aria-labelledby="weekly-agenda-title">
+  <div class="d-flex justify-content-between align-items-end flex-wrap gap-2 mb-3">
+    <div>
+      <h5 id="weekly-agenda-title" class="mb-1 text-dark fw-bold">Agenda da semana</h5>
+      <p class="text-muted small mb-0">{{ semana_inicio|date:"d/m" }} a {{ semana_fim|date:"d/m/Y" }}</p>
+    </div>
+    <a class="btn-estetica-outline text-decoration-none" href="/agenda/">Ver agenda completa</a>
+  </div>
+
+  {% if agenda_semana_dias %}
+    <div class="weekly-agenda-grid">
+      {% for dia in agenda_semana_dias %}
+        <article class="agenda-day-card">
+          <header class="agenda-day-header">
+            <span class="agenda-day-weekday">{{ dia.data|date:"l" }}</span>
+            <strong>{{ dia.data|date:"d/m" }}</strong>
+          </header>
+          <div class="agenda-day-items">
+            {% for agendamento in dia.agendamentos %}
+              <a href="/agenda/{{ agendamento.pk }}/editar/" class="agenda-preview-item">
+                <time>{{ agendamento.inicio|date:"H:i" }}</time>
+                <div class="agenda-preview-details">
+                  <strong>{{ agendamento.cliente }}</strong>
+                  <span>{{ agendamento.servico }} · {{ agendamento.profissional.get_full_name|default:agendamento.profissional.username }}</span>
+                </div>
+                <span class="agenda-status agenda-status-{{ agendamento.status|lower }}">{{ agendamento.get_status_display }}</span>
+              </a>
+            {% endfor %}
+          </div>
+        </article>
+      {% endfor %}
+    </div>
+  {% else %}
+    <div class="agenda-empty-state">
+      <div class="agenda-empty-icon"><i class="bi bi-calendar2-heart"></i></div>
+      <div>
+        <h6 class="mb-1">Nenhum agendamento nesta semana</h6>
+        <p class="text-muted small mb-0">A semana está livre para novos atendimentos.</p>
+      </div>
+      <a class="btn-estetica text-decoration-none ms-lg-auto" href="/agenda/novo/">
+        <i class="bi bi-plus-lg me-1"></i>Novo agendamento
+      </a>
+    </div>
+  {% endif %}
+</section>
 
 <div class="card stat-card mt-3">
   <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">

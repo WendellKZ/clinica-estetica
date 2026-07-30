@@ -1,6 +1,7 @@
 from django.contrib.auth.decorators import login_required
 from django.db.utils import OperationalError, ProgrammingError
 from django.shortcuts import render
+from django.utils import timezone
 
 from agenda.models import Agendamento
 from clientes.models import Cliente
@@ -66,11 +67,40 @@ def dashboard(request):
     clientes_count = Cliente.objects.filter(empresa=request.empresa).count() if hasattr(Cliente, 'empresa_id') and getattr(request, 'empresa', None) else Cliente.objects.count()
     produtos_count = Produto.objects.filter(empresa=request.empresa).count() if hasattr(Produto, 'empresa_id') and getattr(request, 'empresa', None) else Produto.objects.count()
 
+    semana_inicio = hoje_date - timezone.timedelta(days=hoje_date.weekday())
+    semana_fim = semana_inicio + timezone.timedelta(days=7)
+    inicio_semana = timezone.make_aware(
+        timezone.datetime.combine(semana_inicio, timezone.datetime.min.time())
+    )
+    fim_semana = timezone.make_aware(
+        timezone.datetime.combine(semana_fim, timezone.datetime.min.time())
+    )
+    qs_agenda = (
+        Agendamento.objects.filter(inicio__gte=inicio_semana, inicio__lt=fim_semana)
+        .select_related("cliente", "servico", "profissional")
+        .order_by("inicio")
+    )
+    if hasattr(Agendamento, "empresa_id") and getattr(request, "empresa", None):
+        qs_agenda = qs_agenda.filter(empresa=request.empresa)
+
+    agenda_semana_dias = []
+    agenda_por_dia = {}
+    for agendamento in qs_agenda:
+        data_local = timezone.localtime(agendamento.inicio).date()
+        if data_local not in agenda_por_dia:
+            grupo = {"data": data_local, "agendamentos": []}
+            agenda_por_dia[data_local] = grupo
+            agenda_semana_dias.append(grupo)
+        agenda_por_dia[data_local]["agendamentos"].append(agendamento)
+
     context = {
         "hoje": hoje,
         "mes": mes,
         "clientes_count": clientes_count,
         "produtos_count": produtos_count,
+        "agenda_semana_dias": agenda_semana_dias,
+        "semana_inicio": semana_inicio,
+        "semana_fim": semana_fim - timezone.timedelta(days=1),
     }
     return render(request, "dashboard.html", context)
 
