@@ -112,11 +112,12 @@ def agenda_novo(request):
     else:
         initial = {}
         now = timezone.localtime()
+        suggested_start = (now + timedelta(minutes=5)).replace(second=0, microsecond=0)
         if hasattr(Form, "base_fields"):
             if "inicio" in Form.base_fields:
-                initial["inicio"] = now.replace(second=0, microsecond=0)
+                initial["inicio"] = suggested_start
             if "fim" in Form.base_fields:
-                initial["fim"] = (now + timedelta(minutes=60)).replace(second=0, microsecond=0)
+                initial["fim"] = suggested_start + timedelta(minutes=60)
         form = Form(initial=initial)
 
     return render(request, "agenda/agenda_form.html", {"form": form, "titulo": "Novo agendamento"})

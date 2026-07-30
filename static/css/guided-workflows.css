@@ -43,6 +43,26 @@ h1, h2, h3,
   border-color: var(--sand-200) !important;
 }
 
+.brand-section {
+  padding: 1rem !important;
+}
+
+.brand-logo-sidebar {
+  height: 96px !important;
+  background: #faece8 !important;
+}
+
+.brand-logo-sidebar img,
+.brand-logo-mobile img {
+  object-fit: contain !important;
+  object-position: center !important;
+}
+
+.brand-logo-mobile {
+  height: 54px !important;
+  background: #faece8 !important;
+}
+
 .main-content,
 .bg-saas {
   background: var(--sand-50) !important;

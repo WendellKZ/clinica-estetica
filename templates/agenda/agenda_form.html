@@ -1,113 +1,87 @@
 {% extends "base.html" %}
-{% load static %}
-
+{% block title %}{{ titulo }} | Elisângela Barbosa Estética{% endblock %}
+{% block header_title %}{{ titulo }}{% endblock %}
 {% block content %}
-<div class="container-fluid py-4">
-  <div class="d-flex align-items-start justify-content-between flex-wrap gap-3 mb-3">
-    <div>
-      <h1 class="display-6 mb-1">{{ titulo|default:"Novo agendamento" }}</h1>
-      <div class="text-muted">Agendamento rápido — preencha o essencial e salve.</div>
-    </div>
-
-    <div class="d-flex gap-2 align-items-center">
-      <a class="btn btn-outline-primary rounded-pill" href="{% url 'agenda:agenda_lista' %}">← Voltar</a>
-    </div>
-  </div>
-
-  <div class="card shadow-sm border-0" style="border-radius: 20px;">
-    <div class="card-body p-4">
-      <form method="post" novalidate>
-        {% csrf_token %}
-
-        {% if form.non_field_errors %}
-          <div class="alert alert-danger">
-            {{ form.non_field_errors }}
-          </div>
-        {% endif %}
-
-        <div class="row g-3">
-          {% for field in form %}
-            <div class="col-12 col-lg-6">
-              <label class="form-label fw-semibold" for="{{ field.id_for_label }}">
-                {{ field.label }}
-                {% if field.field.required %}<span class="text-danger">*</span>{% endif %}
-              </label>
-
-              {{ field }}
-
-              {% if field.help_text %}
-                <div class="form-text">{{ field.help_text }}</div>
-              {% endif %}
-
-              {% if field.errors %}
-                <div class="text-danger small mt-1">
-                  {{ field.errors }}
-                </div>
-              {% endif %}
-            </div>
-          {% endfor %}
-        </div>
-
-        <hr class="my-4"/>
-
-        <div class="d-flex flex-wrap gap-2">
-          <button type="submit" class="btn btn-primary rounded-pill px-4">
-            ✓ Salvar agendamento
-          </button>
-          <a href="{% url 'agenda:agenda_lista' %}" class="btn btn-outline-secondary rounded-pill px-4">
-            Cancelar
-          </a>
-        </div>
-
-        <div class="text-muted small mt-3">
-          Validação: o sistema bloqueia conflito de horário para o mesmo profissional (quando configurado).
-        </div>
-      </form>
-    </div>
-  </div>
+<div class="guided-page-header">
+  <div><h1>{{ titulo }}</h1><p>Preencha uma etapa de cada vez para evitar erros.</p></div>
+  <a class="btn btn-outline-secondary" href="{% url 'agenda:agenda_lista' %}">Cancelar</a>
 </div>
 
-<style>
-  form input, form select, form textarea {
-    width: 100%;
-    border-radius: 14px !important;
-    border: 1px solid rgba(120,120,150,.25) !important;
-    padding: .65rem .9rem !important;
-    background: rgba(255,255,255,.85) !important;
-  }
-  form input:focus, form select:focus, form textarea:focus {
-    outline: none !important;
-    box-shadow: 0 0 0 .2rem rgba(132, 94, 247, .15) !important;
-    border-color: rgba(132, 94, 247, .45) !important;
-  }
-</style>
+<form method="post" class="guided-form" data-wizard="true" novalidate>
+  {% csrf_token %}
+  <div class="wizard-layout">
+    <aside class="wizard-sidebar">
+      <ol class="wizard-progress">
+        <li class="wizard-progress-item">1. Cliente</li>
+        <li class="wizard-progress-item">2. Atendimento</li>
+        <li class="wizard-progress-item">3. Horário</li>
+        <li class="wizard-progress-item">4. Conferir</li>
+      </ol>
+    </aside>
+    <div class="wizard-content">
+      {% if form.non_field_errors %}<div class="alert alert-danger">{{ form.non_field_errors }}</div>{% endif %}
+
+      <section class="wizard-step">
+        <h2>Quem será atendido?</h2>
+        <p class="wizard-step-intro">Selecione um cliente existente ou cadastre os dados básicos na hora.</p>
+        <div class="field-group"><label for="{{ form.cliente.id_for_label }}">Cliente existente</label>{{ form.cliente }}{% for e in form.cliente.errors %}<div class="wizard-field-error">{{ e }}</div>{% endfor %}</div>
+        <div class="guided-callout mb-3"><i class="bi bi-person-plus"></i><span>Se o cliente ainda não estiver cadastrado, preencha abaixo.</span></div>
+        <div class="row g-3">
+          <div class="col-md-6"><label for="{{ form.cliente_nome.id_for_label }}">Nome do novo cliente</label>{{ form.cliente_nome }}{% for e in form.cliente_nome.errors %}<div class="wizard-field-error">{{ e }}</div>{% endfor %}</div>
+          <div class="col-md-3"><label for="{{ form.cliente_telefone.id_for_label }}">Telefone</label>{{ form.cliente_telefone }}</div>
+          <div class="col-md-3"><label for="{{ form.cliente_email.id_for_label }}">E-mail</label>{{ form.cliente_email }}</div>
+        </div>
+        <div class="wizard-actions"><a class="btn wizard-back" href="{% url 'agenda:agenda_lista' %}">Cancelar</a><button class="btn wizard-next" type="button">Continuar</button></div>
+      </section>
+
+      <section class="wizard-step">
+        <h2>Qual será o atendimento?</h2>
+        <p class="wizard-step-intro">Escolha o serviço e o profissional responsável.</p>
+        <div class="row g-3">
+          <div class="col-md-6"><label for="{{ form.servico.id_for_label }}">Serviço *</label>{{ form.servico }}{% for e in form.servico.errors %}<div class="wizard-field-error">{{ e }}</div>{% endfor %}</div>
+          <div class="col-md-6"><label for="{{ form.profissional.id_for_label }}">Profissional *</label>{{ form.profissional }}{% for e in form.profissional.errors %}<div class="wizard-field-error">{{ e }}</div>{% endfor %}</div>
+        </div>
+        <div class="wizard-actions"><button class="btn wizard-back" type="button">Voltar</button><button class="btn wizard-next" type="button">Continuar</button></div>
+      </section>
+
+      <section class="wizard-step">
+        <h2>Quando será o atendimento?</h2>
+        <p class="wizard-step-intro">O início já vem cinco minutos adiantado para dar tempo de concluir o cadastro.</p>
+        <div class="row g-3">
+          <div class="col-md-6"><label for="{{ form.inicio.id_for_label }}">Início *</label>{{ form.inicio }}{% for e in form.inicio.errors %}<div class="wizard-field-error">{{ e }}</div>{% endfor %}</div>
+          <div class="col-md-6"><label for="{{ form.duracao_min.id_for_label }}">Duração</label>{{ form.duracao_min }}</div>
+          <div class="col-md-6"><label for="{{ form.fim.id_for_label }}">Fim *</label>{{ form.fim }}{% for e in form.fim.errors %}<div class="wizard-field-error">{{ e }}</div>{% endfor %}</div>
+          <div class="col-md-6"><label for="{{ form.status.id_for_label }}">Status</label>{{ form.status }}</div>
+          <div class="col-12"><label for="{{ form.observacoes.id_for_label }}">Observações</label>{{ form.observacoes }}</div>
+        </div>
+        <div class="wizard-actions"><button class="btn wizard-back" type="button">Voltar</button><button class="btn wizard-next" type="button">Conferir</button></div>
+      </section>
+
+      <section class="wizard-step">
+        <h2>Confira o agendamento</h2>
+        <p class="wizard-step-intro">Revise as informações antes de salvar.</p>
+        <div class="wizard-summary" aria-live="polite"></div>
+        <div class="wizard-actions"><button class="btn wizard-back" type="button">Voltar</button><button class="btn wizard-submit" type="submit">Salvar agendamento</button></div>
+      </section>
+    </div>
+  </div>
+</form>
 
 <script>
-(function(){
-  const now = new Date();
-  const pad = (n) => String(n).padStart(2,'0');
-  const toLocal = (d) => `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
-
-  now.setSeconds(0); now.setMilliseconds(0);
-  const m = now.getMinutes();
-  now.setMinutes(m + (5 - (m % 5)) % 5);
-
-  const minVal = toLocal(now);
-
-  const inicio = document.querySelector('input[name="inicio"]');
-  const fim = document.querySelector('input[name="fim"]');
-
-  if (inicio && inicio.type === "datetime-local"){
-    inicio.min = minVal;
-    if (!inicio.value) inicio.value = minVal;
+(function () {
+  const inicio = document.getElementById("{{ form.inicio.id_for_label }}");
+  const fim = document.getElementById("{{ form.fim.id_for_label }}");
+  const duracao = document.getElementById("{{ form.duracao_min.id_for_label }}");
+  if (!inicio || !fim || !duracao) return;
+  function atualizarFim() {
+    if (!inicio.value) return;
+    const data = new Date(inicio.value);
+    data.setMinutes(data.getMinutes() + Number(duracao.value || 60));
+    const local = new Date(data.getTime() - data.getTimezoneOffset() * 60000);
+    fim.value = local.toISOString().slice(0, 16);
   }
-  if (fim && fim.type === "datetime-local"){
-    fim.min = minVal;
-    if (!fim.value){
-      const end = new Date(now.getTime() + 60*60000);
-      fim.value = toLocal(end);
-    }
-  }
+  inicio.addEventListener("change", atualizarFim);
+  duracao.addEventListener("change", atualizarFim);
 })();
 </script>
 {% endblock %}

@@ -461,3 +461,37 @@ class GuidedWorkflowTests(TestCase):
                 response = self.client.get(url)
                 self.assertContains(response, 'class="wizard-layout"')
                 self.assertContains(response, 'class="wizard-sidebar"')
+
+
+class GuidedAppointmentTests(TestCase):
+    def setUp(self):
+        self.user = get_user_model().objects.create_user(
+            username="agenda_wizard",
+            password="senha-forte-123",
+            is_staff=True,
+        )
+        self.client.force_login(self.user)
+
+    @patch("agenda.views.timezone.localtime")
+    def test_new_appointment_starts_five_minutes_ahead(self, mocked_localtime):
+        fixed_now = timezone.make_aware(
+            timezone.datetime(2026, 7, 30, 11, 38)
+        )
+        mocked_localtime.return_value = fixed_now
+
+        response = self.client.get(reverse("agenda:agenda_novo"))
+
+        form = response.context["form"]
+        self.assertEqual(form.initial["inicio"], fixed_now + timezone.timedelta(minutes=5))
+        self.assertEqual(form.initial["fim"], fixed_now + timezone.timedelta(minutes=65))
+
+    def test_new_appointment_uses_four_guided_steps(self):
+        response = self.client.get(reverse("agenda:agenda_novo"))
+
+        self.assertContains(response, 'data-wizard="true"')
+        self.assertContains(response, 'class="wizard-layout"')
+        self.assertContains(response, 'class="wizard-sidebar"')
+        self.assertContains(response, "1. Cliente")
+        self.assertContains(response, "4. Conferir")
+        self.assertContains(response, 'class="top-header-title"')
+        self.assertContains(response, "Novo agendamento")
