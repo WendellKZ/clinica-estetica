@@ -549,3 +549,20 @@ class ServiceSynchronizationTests(TestCase):
 
         response = self.client.get(reverse("agenda:agenda_novo"))
         self.assertNotContains(response, "Meia perna")
+
+    def test_deleted_panel_service_is_hidden_without_deleting_history_model(self):
+        from agenda.models import Servico as AgendaServico
+        from servicos.models import Servico as PainelServico
+
+        service = PainelServico.objects.create(
+            nome="Serviço temporário",
+            duracao_min=30,
+            preco_padrao="20.00",
+            ativo=True,
+        )
+        service.delete()
+
+        synced = AgendaServico.objects.get(nome="Serviço temporário")
+        self.assertFalse(synced.ativo)
+        response = self.client.get(reverse("agenda:agenda_novo"))
+        self.assertNotContains(response, "Serviço temporário")
