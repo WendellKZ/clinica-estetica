@@ -1,11 +1,15 @@
 {% extends "base.html" %}
 {% block title %}{% if modo == 'novo' %}Novo serviço{% else %}Editar serviço{% endif %} | Elisângela Barbosa Estética{% endblock %}
+{% block header_title %}{% if modo == 'novo' %}Novo serviço{% else %}Editar serviço{% endif %}{% endblock %}
 {% block content %}
 <div class="guided-page"><div class="guided-heading"><div><span class="guided-kicker">Cadastro guiado</span><h2>{% if modo == 'novo' %}Novo serviço{% else %}Editar serviço{% endif %}</h2><p>Informe o essencial. Você poderá alterar depois.</p></div></div>
 <form method="post" data-wizard="true" class="guided-form">{% csrf_token %}
-<div class="wizard-progress"><span data-step-indicator="1">1. Serviço</span><span data-step-indicator="2">2. Valores</span><span data-step-indicator="3">3. Conferir</span></div>
+<div class="wizard-layout">
+<aside class="wizard-sidebar"><div class="wizard-progress"><span class="wizard-progress-item" data-step-indicator="1">1. Serviço</span><span class="wizard-progress-item" data-step-indicator="2">2. Valores</span><span class="wizard-progress-item" data-step-indicator="3">3. Conferir</span></div></aside>
+<div class="wizard-content">
 <section class="wizard-step" data-step="1"><h3>Qual serviço será oferecido?</h3><div class="field-group"><label>Nome do serviço</label>{{ form.nome }}{% for e in form.nome.errors %}<div class="text-danger">{{ e }}</div>{% endfor %}</div><div class="field-group"><label>Duração aproximada em minutos</label>{{ form.duracao_min }}</div><div class="wizard-actions"><a class="btn btn-outline-secondary" href="{% url 'servicos:servico_lista' %}">Cancelar</a><button type="button" class="btn btn-primary" data-next>Continuar</button></div></section>
 <section class="wizard-step" data-step="2"><h3>Defina os valores</h3><div class="row g-3"><div class="col-md-6"><label>Preço cobrado (R$)</label>{{ form.preco_padrao }}</div><div class="col-md-6"><label>Custo estimado (R$)</label>{{ form.custo_padrao }}</div></div><div class="form-check mt-4">{{ form.ativo }} <label for="{{ form.ativo.id_for_label }}">Serviço disponível para uso</label></div><div class="wizard-actions"><button type="button" class="btn btn-outline-secondary" data-back>Voltar</button><button type="button" class="btn btn-primary" data-next>Continuar</button></div></section>
 <section class="wizard-step" data-step="3"><h3>Confira o serviço</h3><div class="wizard-summary" data-summary></div>{% for e in form.non_field_errors %}<div class="alert alert-danger">{{ e }}</div>{% endfor %}<div class="wizard-actions"><button type="button" class="btn btn-outline-secondary" data-back>Voltar</button><button class="btn btn-primary">Salvar serviço</button></div></section>
+</div></div>
 </form></div>
 {% endblock %}

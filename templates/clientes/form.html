@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% block title %}{{ titulo }} | Elisângela Barbosa Estética{% endblock %}
+{% block header_title %}{{ titulo }}{% endblock %}
 {% block content %}
 <div class="guided-page-header">
   <div>
@@ -11,12 +12,16 @@
 
 <form method="post" class="guided-form" data-wizard="true" novalidate>
   {% csrf_token %}
+  <div class="wizard-layout">
+  <aside class="wizard-sidebar">
   <ol class="wizard-progress" style="--wizard-count:4">
     <li class="wizard-progress-item">1. Identificação</li>
     <li class="wizard-progress-item">2. Contato</li>
     <li class="wizard-progress-item">3. Observações</li>
     <li class="wizard-progress-item">4. Conferir</li>
   </ol>
+  </aside>
+  <div class="wizard-content">
 
   <section class="wizard-step">
     <h2>Quem é o cliente?</h2>
@@ -72,5 +77,7 @@
       <button class="btn wizard-submit" type="submit"><i class="bi bi-person-check me-1"></i>Salvar cliente</button>
     </div>
   </section>
+  </div>
+  </div>
 </form>
 {% endblock %}

@@ -1,10 +1,14 @@
 {% extends "base.html" %}
+{% block title %}Nova venda | Elisângela Barbosa Estética{% endblock %}
+{% block header_title %}Nova venda{% endblock %}
 {% block content %}
 <div class="guided-page">
   <div class="guided-heading"><div><span class="guided-kicker">Venda guiada</span><h2>Iniciar nova venda</h2><p>Vamos preparar a venda em poucos passos.</p></div></div>
   <form method="post" data-wizard="true" class="guided-form">
     {% csrf_token %}
-    <div class="wizard-progress" aria-label="Progresso"><span data-step-indicator="1">1. Cliente</span><span data-step-indicator="2">2. Pagamento</span><span data-step-indicator="3">3. Conferir</span></div>
+    <div class="wizard-layout">
+    <aside class="wizard-sidebar"><div class="wizard-progress" aria-label="Progresso"><span class="wizard-progress-item" data-step-indicator="1">1. Cliente</span><span class="wizard-progress-item" data-step-indicator="2">2. Pagamento</span><span class="wizard-progress-item" data-step-indicator="3">3. Conferir</span></div></aside>
+    <div class="wizard-content">
     <section class="wizard-step" data-step="1"><h3>Para quem é a venda?</h3><p class="step-help">Escolha um cliente já cadastrado ou preencha os dados de um novo cliente.</p>
       <div class="field-group"><label>Cliente existente</label>{{ form.cliente }}</div>
       <div class="row g-3"><div class="col-md-6"><label>Novo cliente — nome</label>{{ form.cliente_nome }}</div><div class="col-md-3"><label>Telefone</label>{{ form.cliente_telefone }}</div><div class="col-md-3"><label>E-mail</label>{{ form.cliente_email }}</div></div>
@@ -18,6 +22,8 @@
       {% for e in form.non_field_errors %}<div class="alert alert-danger">{{ e }}</div>{% endfor %}
       <div class="wizard-actions"><button type="button" class="btn btn-outline-secondary" data-back>Voltar</button><button class="btn btn-primary" type="submit">Criar venda e adicionar itens</button></div>
     </section>
+    </div>
+    </div>
   </form>
 </div>
 {% endblock %}

@@ -57,7 +57,7 @@
         else indicator.removeAttribute("aria-current");
       });
       fillSummary(steps[current]);
-      var heading = steps[current].querySelector("h2");
+      var heading = steps[current].querySelector("h2, h3");
       if (heading) {
         heading.setAttribute("tabindex", "-1");
         heading.focus({ preventScroll: true });
@@ -78,8 +78,8 @@
     }
 
     form.addEventListener("click", function (event) {
-      var next = event.target.closest(".wizard-next");
-      var back = event.target.closest(".wizard-back");
+      var next = event.target.closest(".wizard-next, [data-next]");
+      var back = event.target.closest(".wizard-back, [data-back]");
       if (next) {
         event.preventDefault();
         if (validateStep()) show(current + 1);

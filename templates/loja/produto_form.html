@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% block title %}{{ titulo }} | Elisângela Barbosa Estética{% endblock %}
+{% block header_title %}{{ titulo }}{% endblock %}
 {% block content %}
 <div class="guided-page-header">
   <div><h1>{{ titulo }}</h1><p>Cadastre o produto seguindo as etapas abaixo.</p></div>
@@ -8,12 +9,16 @@
 
 <form method="post" class="guided-form" data-wizard="true" novalidate>
   {% csrf_token %}
+  <div class="wizard-layout">
+  <aside class="wizard-sidebar">
   <ol class="wizard-progress" style="--wizard-count:4">
     <li class="wizard-progress-item">1. Produto</li>
     <li class="wizard-progress-item">2. Preços</li>
     <li class="wizard-progress-item">3. Estoque</li>
     <li class="wizard-progress-item">4. Conferir</li>
   </ol>
+  </aside>
+  <div class="wizard-content">
 
   <section class="wizard-step">
     <h2>Qual produto será cadastrado?</h2>
@@ -56,5 +61,7 @@
     <div class="wizard-summary" aria-live="polite"></div>
     <div class="wizard-actions"><button class="btn wizard-back" type="button"><i class="bi bi-arrow-left me-1"></i>Voltar</button><button class="btn wizard-submit" type="submit"><i class="bi bi-box-seam me-1"></i>Salvar produto</button></div>
   </section>
+  </div>
+  </div>
 </form>
 {% endblock %}

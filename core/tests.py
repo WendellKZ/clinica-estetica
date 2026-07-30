@@ -438,3 +438,26 @@ class GuidedWorkflowTests(TestCase):
 
         self.assertContains(response, "css/guided-workflows.css")
         self.assertContains(response, "js/guided-workflows.js")
+
+    def test_sale_uses_contextual_header_and_side_step_layout(self):
+        response = self.client.get(reverse("loja:venda_nova"))
+
+        self.assertContains(response, 'class="top-header-title"')
+        self.assertContains(response, "Nova venda", count=2)
+        self.assertNotContains(response, '<div class="fs-5 fw-semibold text-dark">')
+        self.assertContains(response, 'class="wizard-layout"')
+        self.assertContains(response, 'class="wizard-sidebar"')
+
+    def test_all_guided_forms_use_side_step_layout(self):
+        urls = [
+            reverse("clientes_novo"),
+            reverse("loja:produto_novo"),
+            reverse("servicos:servico_novo"),
+            reverse("usuarios:usuario_novo"),
+        ]
+
+        for url in urls:
+            with self.subTest(url=url):
+                response = self.client.get(url)
+                self.assertContains(response, 'class="wizard-layout"')
+                self.assertContains(response, 'class="wizard-sidebar"')
