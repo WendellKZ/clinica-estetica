@@ -403,3 +403,38 @@ class DashboardWeeklyAgendaTests(TestCase):
 
         self.assertEqual(response.context["agenda_semana_dias"], [])
         self.assertContains(response, "Nenhum agendamento nesta semana")
+
+
+class GuidedWorkflowTests(TestCase):
+    def setUp(self):
+        self.client = Client()
+        self.user = get_user_model().objects.create_user(
+            username="wizard_admin",
+            password="senha-forte-123",
+            is_staff=True,
+            is_superuser=True,
+        )
+        self.client.force_login(self.user)
+
+    def test_main_create_forms_render_guided_steps(self):
+        urls = [
+            reverse("clientes_novo"),
+            reverse("loja:produto_novo"),
+            reverse("loja:venda_nova"),
+            reverse("servicos:servico_novo"),
+            reverse("usuarios:usuario_novo"),
+        ]
+
+        for url in urls:
+            with self.subTest(url=url):
+                response = self.client.get(url)
+                self.assertEqual(response.status_code, 200)
+                self.assertContains(response, 'data-wizard="true"')
+                self.assertContains(response, 'class="wizard-progress"')
+                self.assertContains(response, "Continuar")
+
+    def test_global_layout_loads_natural_theme_and_wizard_assets(self):
+        response = self.client.get(reverse("dashboard"))
+
+        self.assertContains(response, "css/guided-workflows.css")
+        self.assertContains(response, "js/guided-workflows.js")
